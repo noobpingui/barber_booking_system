@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}{{ target_date.strftime("%d %b %Y") }} — Barber Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- ── Date navigation ──────────────────────────────────────────── -->
+<div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+
+  <a href="/dashboard/?target_date={{ prev_date }}" class="date-nav-btn">&larr;</a>
+
+  <h1 class="date-heading mb-0 flex-grow-1 text-center">
+    {{ target_date.strftime("%A, %d %B %Y") }}
+  </h1>
+
+  <a href="/dashboard/?target_date={{ next_date }}" class="date-nav-btn">&rarr;</a>
+
+  <form method="get" action="/dashboard/" id="date-form">
+    <input
+      type="date"
+      name="target_date"
+      value="{{ target_date }}"
+      class="form-control form-control-sm"
+      style="width: 150px;"
+      onchange="document.getElementById('date-form').submit()"
+    />
+  </form>
+
+</div>
+
+<!-- ── Error banner ──────────────────────────────────────────────── -->
+{% if block_error == "already_booked" %}
+<div class="alert alert-warning" role="alert">
+  That slot already has a confirmed appointment and cannot be blocked.
+</div>
+{% elif block_error == "invalid" %}
+<div class="alert alert-danger" role="alert">
+  Invalid slot time. Please select a valid time from the list.
+</div>
+{% endif %}
+
+<!-- ── Stat cards ───────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+  <div class="col-4">
+    <div class="stat-card bg-white shadow-sm">
+      <div class="stat-label text-success">Confirmed</div>
+      <div class="stat-value text-success">{{ confirmed_count }}</div>
+    </div>
+  </div>
+
+  <div class="col-4">
+    <div class="stat-card bg-white shadow-sm">
+      <div class="stat-label text-secondary">Cancelled</div>
+      <div class="stat-value text-secondary">{{ cancelled_count }}</div>
+    </div>
+  </div>
+
+  <div class="col-4">
+    <div class="stat-card bg-white shadow-sm">
+      <div class="stat-label" style="color:#fd7e14;">Blocked</div>
+      <div class="stat-value" style="color:#fd7e14;">{{ blocked_count }}</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Block a slot ─────────────────────────────────────────────── -->
+<div class="bg-white shadow-sm rounded p-3 mb-4 d-flex align-items-center gap-3 flex-wrap">
+  <span style="font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6c757d;">
+    Block a slot
+  </span>
+  <form method="post" action="/dashboard/block" class="d-flex align-items-center gap-2">
+    <input type="hidden" name="target_date" value="{{ target_date }}" />
+    <select name="slot_time" class="form-select form-select-sm" style="width:120px;" required>
+      {% for t in slot_times %}
+      <option value="{{ t }}">{{ t }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-sm btn-outline-warning">Block</button>
+  </form>
+</div>
+
+<!-- ── Appointments + blocked slots table ────────────────────────── -->
+{% if events %}
+<div class="bg-white shadow-sm rounded">
+  <table class="table appt-table mb-0">
+    <thead>
+      <tr>
+        <th style="width:90px;">Time</th>
+        <th>Customer</th>
+        <th>Phone</th>
+        <th style="width:110px;">Status</th>
+        <th style="width:100px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for event in events %}
+
+        {% if event.kind == "appointment" %}
+          {% set appt = event.appt %}
+          <tr class="row-{{ appt.status }}">
+
+            <td class="time-cell">{{ appt.start_time.strftime("%H:%M") }}</td>
+
+            <td>
+              <div class="customer-name">{{ appt.customer.full_name }}</div>
+              {% if appt.notes %}
+              <div class="customer-notes">{{ appt.notes }}</div>
+              {% endif %}
+            </td>
+
+            <td>
+              <a href="tel:{{ appt.customer.phone }}" class="phone-link">
+                {{ appt.customer.phone }}
+              </a>
+            </td>
+
+            <td>
+              {% if appt.status == "confirmed" %}
+                <span class="badge-confirmed">Confirmed</span>
+              {% else %}
+                <span class="badge-cancelled">Cancelled</span>
+              {% endif %}
+            </td>
+
+            <td class="text-end">
+              {% if appt.status == "confirmed" %}
+              <form method="post" action="/dashboard/cancel/{{ appt.id }}"
+                    onsubmit="return confirm('Cancel appointment for {{ appt.customer.full_name }} at {{ appt.start_time.strftime("%H:%M") }}?')">
+                <input type="hidden" name="target_date" value="{{ target_date }}" />
+                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+              </form>
+              {% endif %}
+            </td>
+
+          </tr>
+
+        {% else %}
+          {% set block = event.block %}
+          <tr class="row-blocked">
+
+            <td class="time-cell" style="color:#fd7e14;">{{ block.start_time.strftime("%H:%M") }}</td>
+            <td><span class="text-secondary" style="font-size:0.9rem;">— Blocked —</span></td>
+            <td></td>
+            <td><span class="badge-blocked">Blocked</span></td>
+
+            <td class="text-end">
+              <form method="post" action="/dashboard/unblock/{{ block.id }}">
+                <input type="hidden" name="target_date" value="{{ target_date }}" />
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Unblock</button>
+              </form>
+            </td>
+
+          </tr>
+        {% endif %}
+
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="bg-white rounded shadow-sm empty-state">
+  <div class="icon">📅</div>
+  <p class="fw-semibold mb-1">No appointments or blocks for this day.</p>
+  <p class="mb-0" style="font-size:0.9rem;">Use the arrows or date picker to navigate to another date.</p>
+</div>
+{% endif %}
+
+{% endblock %}

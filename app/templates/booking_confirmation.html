@@ -1,0 +1,50 @@
+{% extends "booking_base.html" %}
+{% block title %}Appointment Confirmed{% endblock %}
+
+{% block content %}
+
+<div class="section-card text-center py-5">
+  <div class="confirm-icon mb-3">✅</div>
+  <h2 class="fw-bold mb-1">You're booked!</h2>
+  <p class="text-secondary mb-4">We'll see you at the time below. Save these details.</p>
+
+  <div class="text-start d-inline-block">
+    <table class="table table-borderless mb-0 confirm-detail">
+      <tbody>
+        <tr>
+          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;">Date</td>
+          <td class="fw-bold">{{ appointment.start_time.strftime("%A, %d %B %Y") }}</td>
+        </tr>
+        <tr>
+          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;">Time</td>
+          <td class="fw-bold">{{ appointment.start_time.strftime("%H:%M") }}</td>
+        </tr>
+        <tr>
+          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;">Name</td>
+          <td>{{ appointment.customer.full_name }}</td>
+        </tr>
+        {% if appointment.notes %}
+        <tr>
+          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;">Notes</td>
+          <td>{{ appointment.notes }}</td>
+        </tr>
+        {% endif %}
+        <tr>
+          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;">Booking #</td>
+          <td class="text-secondary">{{ appointment.id }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="text-center mt-2">
+  <p class="text-secondary mb-3" style="font-size:0.9rem;">
+    Need to cancel? Use the API endpoint
+    <code>PATCH /api/v1/appointments/{{ appointment.id }}/cancel</code>
+    with your email address.
+  </p>
+  <a href="/booking/" class="btn btn-outline-dark">Book another appointment</a>
+</div>
+
+{% endblock %}

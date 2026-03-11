@@ -1,0 +1,35 @@
+# systemd service unit for the Barber Booking System.
+#
+# Installation:
+#   sudo cp deploy/barber.service /etc/systemd/system/barber.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable barber
+#   sudo systemctl start barber
+#
+# Logs:
+#   sudo journalctl -u barber -f
+
+[Unit]
+Description=Barber Booking System
+# Start after the network and PostgreSQL are ready.
+After=network.target postgresql.service
+
+[Service]
+# Change to the OS user you created for this app (not root).
+User=ubuntu
+Group=ubuntu
+
+WorkingDirectory=/home/ubuntu/barber_booking_system
+
+# Load all environment variables from the .env file.
+EnvironmentFile=/home/ubuntu/barber_booking_system/.env
+
+# Full path to gunicorn inside the virtualenv.
+ExecStart=/home/ubuntu/barber_booking_system/venv/bin/gunicorn app.main:app -c gunicorn.conf.py
+
+# Restart the process automatically if it crashes.
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,175 @@
+{% extends "booking_base.html" %}
+{% block title %}Book an Appointment{% endblock %}
+
+{% block content %}
+
+<!-- ── Error banner ──────────────────────────────────────────────── -->
+{% if error == "slot_taken" %}
+<div class="alert alert-warning" role="alert">
+  That slot was just taken. Please pick another time.
+</div>
+{% elif error == "invalid_slot" %}
+<div class="alert alert-danger" role="alert">
+  Invalid time slot. Please select a valid time and try again.
+</div>
+{% elif error == "invalid_details" %}
+<div class="alert alert-danger" role="alert">
+  Please check your contact details and try again.
+</div>
+{% elif error == "week_limit" %}
+<div class="alert alert-warning" role="alert">
+  You already have an appointment booked this week. Only one appointment per week is allowed.
+</div>
+{% endif %}
+
+<form method="post" action="/booking/" id="booking-form">
+
+  <!-- ── Step 1: Pick a date ──────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-title">Step 1 — Choose a date</div>
+    <input
+      type="date"
+      id="date-picker"
+      class="form-control"
+      style="max-width: 220px;"
+    />
+  </div>
+
+  <!-- ── Step 2: Pick a slot ─────────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-title">Step 2 — Choose a time</div>
+
+    <div id="slots-loading" class="text-secondary" style="display:none; font-size:0.9rem;">
+      Loading available times…
+    </div>
+    <div id="slots-empty" class="text-secondary" style="display:none; font-size:0.9rem;">
+      No available slots for this date. Try another day.
+    </div>
+    <div id="slots-prompt" class="text-secondary" style="font-size:0.9rem;">
+      Select a date above to see available times.
+    </div>
+
+    <div id="slots-grid" class="d-flex flex-wrap gap-2" style="display:none !important;"></div>
+
+    <!-- Hidden field populated by JS when a slot is clicked -->
+    <input type="hidden" name="start_time" id="start-time-input" />
+  </div>
+
+  <!-- ── Step 3: Contact details ─────────────────────────────────── -->
+  <div class="section-card">
+    <div class="section-title">Step 3 — Your details</div>
+
+    <div class="mb-3">
+      <label for="full_name" class="form-label fw-semibold">Full name</label>
+      <input type="text" class="form-control" id="full_name" name="full_name"
+             placeholder="Jane Smith" required maxlength="100" />
+    </div>
+
+    <div class="mb-3">
+      <label for="email" class="form-label fw-semibold">Email</label>
+      <input type="email" class="form-control" id="email" name="email"
+             placeholder="jane@example.com" required maxlength="255" />
+    </div>
+
+    <div class="mb-3">
+      <label for="phone" class="form-label fw-semibold">Phone</label>
+      <input type="tel" class="form-control" id="phone" name="phone"
+             placeholder="+1 555 0100" required minlength="7" maxlength="20" />
+    </div>
+
+    <div class="mb-3">
+      <label for="notes" class="form-label fw-semibold">
+        Notes <span class="fw-normal text-secondary">(optional)</span>
+      </label>
+      <input type="text" class="form-control" id="notes" name="notes"
+             placeholder="e.g. fade, beard trim…" maxlength="255" />
+    </div>
+  </div>
+
+  <!-- ── Submit ──────────────────────────────────────────────────── -->
+  <button type="submit" class="btn btn-dark w-100 py-3 fw-bold" id="submit-btn" disabled>
+    Book Appointment
+  </button>
+
+</form>
+
+<script>
+  const datePicker    = document.getElementById('date-picker');
+  const slotsGrid     = document.getElementById('slots-grid');
+  const slotsLoading  = document.getElementById('slots-loading');
+  const slotsEmpty    = document.getElementById('slots-empty');
+  const slotsPrompt   = document.getElementById('slots-prompt');
+  const startInput    = document.getElementById('start-time-input');
+  const submitBtn     = document.getElementById('submit-btn');
+
+  // Dates are provided by the server in local time (UTC-6).
+  datePicker.value = "{{ today_str }}";
+  datePicker.min   = "{{ today_str }}";
+  datePicker.max   = "{{ max_date_str }}";
+
+  // Fetch slots whenever the date changes.
+  datePicker.addEventListener('change', fetchSlots);
+
+  // Load slots for today immediately on page load.
+  fetchSlots();
+
+  function fetchSlots() {
+    const date = datePicker.value;
+    if (!date) return;
+
+    // Reset state.
+    startInput.value = '';
+    submitBtn.disabled = true;
+    slotsGrid.style.display = 'none';
+    slotsGrid.innerHTML = '';
+    slotsEmpty.style.display = 'none';
+    slotsPrompt.style.display = 'none';
+    slotsLoading.style.display = 'block';
+
+    fetch(`/api/v1/appointments/available-slots?target_date=${date}`)
+      .then(r => r.json())
+      .then(slots => {
+        slotsLoading.style.display = 'none';
+
+        if (!slots.length) {
+          slotsEmpty.style.display = 'block';
+          return;
+        }
+
+        slotsGrid.style.display = 'flex';
+        slots.forEach(slot => {
+          const iso  = slot.start_time;                      // "2026-03-10T09:00:00"
+          const time = iso.slice(11, 16);                    // "09:00"
+          const btn  = document.createElement('button');
+          btn.type      = 'button';
+          btn.className = 'slot-btn';
+          btn.textContent = time;
+          btn.addEventListener('click', () => selectSlot(btn, iso));
+          slotsGrid.appendChild(btn);
+        });
+      })
+      .catch(() => {
+        slotsLoading.style.display = 'none';
+        slotsEmpty.textContent = 'Could not load slots. Please refresh and try again.';
+        slotsEmpty.style.display = 'block';
+      });
+  }
+
+  function selectSlot(btn, iso) {
+    // Deselect any previously selected button.
+    document.querySelectorAll('.slot-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    startInput.value = iso;
+    submitBtn.disabled = false;
+  }
+
+  // Prevent submit if no slot is selected (extra guard alongside the disabled attr).
+  document.getElementById('booking-form').addEventListener('submit', function(e) {
+    if (!startInput.value) {
+      e.preventDefault();
+      alert('Please select a time slot before booking.');
+    }
+  });
+</script>
+
+{% endblock %}
