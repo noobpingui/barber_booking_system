@@ -5,19 +5,19 @@
 
 <!-- ── Error banner ──────────────────────────────────────────────── -->
 {% if error == "slot_taken" %}
-<div class="alert alert-warning" role="alert">
+<div class="alert alert-warning" role="alert" data-i18n="error-slot-taken">
   That slot was just taken. Please pick another time.
 </div>
 {% elif error == "invalid_slot" %}
-<div class="alert alert-danger" role="alert">
+<div class="alert alert-danger" role="alert" data-i18n="error-invalid-slot">
   Invalid time slot. Please select a valid time and try again.
 </div>
 {% elif error == "invalid_details" %}
-<div class="alert alert-danger" role="alert">
+<div class="alert alert-danger" role="alert" data-i18n="error-invalid-details">
   Please check your contact details and try again.
 </div>
 {% elif error == "week_limit" %}
-<div class="alert alert-warning" role="alert">
+<div class="alert alert-warning" role="alert" data-i18n="error-week-limit">
   You already have an appointment booked this week. Only one appointment per week is allowed.
 </div>
 {% endif %}
@@ -26,7 +26,7 @@
 
   <!-- ── Step 1: Pick a date ──────────────────────────────────────── -->
   <div class="section-card">
-    <div class="section-title">Step 1 — Choose a date</div>
+    <div class="section-title" data-i18n="step1-title">Step 1 — Choose a date</div>
     <input
       type="date"
       id="date-picker"
@@ -37,15 +37,15 @@
 
   <!-- ── Step 2: Pick a slot ─────────────────────────────────────── -->
   <div class="section-card">
-    <div class="section-title">Step 2 — Choose a time</div>
+    <div class="section-title" data-i18n="step2-title">Step 2 — Choose a time</div>
 
-    <div id="slots-loading" class="text-secondary" style="display:none; font-size:0.9rem;">
+    <div id="slots-loading" class="text-secondary" style="display:none; font-size:0.9rem;" data-i18n="slots-loading">
       Loading available times…
     </div>
-    <div id="slots-empty" class="text-secondary" style="display:none; font-size:0.9rem;">
+    <div id="slots-empty" class="text-secondary" style="display:none; font-size:0.9rem;" data-i18n="slots-empty">
       No available slots for this date. Try another day.
     </div>
-    <div id="slots-prompt" class="text-secondary" style="font-size:0.9rem;">
+    <div id="slots-prompt" class="text-secondary" style="font-size:0.9rem;" data-i18n="slots-prompt">
       Select a date above to see available times.
     </div>
 
@@ -57,37 +57,28 @@
 
   <!-- ── Step 3: Contact details ─────────────────────────────────── -->
   <div class="section-card">
-    <div class="section-title">Step 3 — Your details</div>
+    <div class="section-title" data-i18n="step3-title">Step 3 — Your details</div>
 
     <div class="mb-3">
-      <label for="full_name" class="form-label fw-semibold">Full name</label>
+      <label for="full_name" class="form-label fw-semibold" data-i18n="label-name">Full name</label>
       <input type="text" class="form-control" id="full_name" name="full_name"
-             placeholder="Jane Smith" required maxlength="100" />
+             placeholder="Alberto Fallas" required maxlength="100" />
     </div>
 
     <div class="mb-3">
-      <label for="email" class="form-label fw-semibold">Email</label>
+      <label for="email" class="form-label fw-semibold" data-i18n="label-email">Email</label>
       <input type="email" class="form-control" id="email" name="email"
-             placeholder="jane@example.com" required maxlength="255" />
+             placeholder="alberto_fallas@example.com" required maxlength="255" />
     </div>
 
     <div class="mb-3">
-      <label for="phone" class="form-label fw-semibold">Phone</label>
+      <label for="phone" class="form-label fw-semibold" data-i18n="label-phone">Phone</label>
       <input type="tel" class="form-control" id="phone" name="phone"
-             placeholder="+1 555 0100" required minlength="7" maxlength="20" />
+             placeholder="80901234" required minlength="8" maxlength="8" />
     </div>
-
-    <div class="mb-3">
-      <label for="notes" class="form-label fw-semibold">
-        Notes <span class="fw-normal text-secondary">(optional)</span>
-      </label>
-      <input type="text" class="form-control" id="notes" name="notes"
-             placeholder="e.g. fade, beard trim…" maxlength="255" />
-    </div>
-  </div>
 
   <!-- ── Submit ──────────────────────────────────────────────────── -->
-  <button type="submit" class="btn btn-dark w-100 py-3 fw-bold" id="submit-btn" disabled>
+  <button type="submit" class="btn btn-dark w-100 py-3 fw-bold" id="submit-btn" disabled data-i18n="submit-btn">
     Book Appointment
   </button>
 
@@ -150,7 +141,9 @@
       })
       .catch(() => {
         slotsLoading.style.display = 'none';
-        slotsEmpty.textContent = 'Could not load slots. Please refresh and try again.';
+        slotsEmpty.textContent = window.getLang() === 'es'
+          ? 'No se pudieron cargar los horarios. Por favor recarga la página.'
+          : 'Could not load slots. Please refresh and try again.';
         slotsEmpty.style.display = 'block';
       });
   }
@@ -167,7 +160,9 @@
   document.getElementById('booking-form').addEventListener('submit', function(e) {
     if (!startInput.value) {
       e.preventDefault();
-      alert('Please select a time slot before booking.');
+      alert(window.getLang() === 'es'
+        ? 'Por favor selecciona un horario antes de reservar.'
+        : 'Please select a time slot before booking.');
     }
   });
 </script>

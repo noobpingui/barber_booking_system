@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>{% block title %}Book an Appointment{% endblock %}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script>window.getLang = () => localStorage.getItem('lang') || 'en';</script>
   <style>
     body {
       background-color: #f0f2f5;
@@ -71,13 +72,26 @@
     .confirm-detail {
       font-size: 1.1rem;
     }
+
+    /* Language toggle */
+    .lang-btn {
+      background: none;
+      border: 1px solid #444;
+      border-radius: 4px;
+      padding: 2px 8px;
+      cursor: pointer;
+      font-size: 1.1rem;
+      line-height: 1.4;
+      color: #fff;
+    }
   </style>
 </head>
 <body>
 
   <nav class="navbar navbar-dark bg-dark mb-4 px-3">
-    <div class="container">
-      <span class="navbar-brand mb-0">✂ Book an Appointment</span>
+    <div class="container d-flex justify-content-between align-items-center">
+      <span class="navbar-brand mb-0" data-i18n="nav-brand">✂ Book an Appointment</span>
+      <button class="lang-btn" id="lang-toggle" onclick="toggleLang()">🇨🇷</button>
     </div>
   </nav>
 
@@ -85,5 +99,54 @@
     {% block content %}{% endblock %}
   </div>
 
+<script>
+  const I18N = {
+    es: {
+      'nav-brand':             '✂ Reservar una Cita',
+      'step1-title':           'Paso 1 — Elige una fecha',
+      'step2-title':           'Paso 2 — Elige un horario',
+      'step3-title':           'Paso 3 — Tus datos',
+      'slots-loading':         'Cargando horarios disponibles…',
+      'slots-empty':           'No hay horarios disponibles para esta fecha. Prueba otro día.',
+      'slots-prompt':          'Selecciona una fecha para ver los horarios disponibles.',
+      'label-name':            'Nombre completo',
+      'label-email':           'Correo electrónico',
+      'label-phone':           'Teléfono',
+      'submit-btn':            'Reservar Cita',
+      'error-slot-taken':      'Ese horario acaba de ocuparse. Por favor elige otro.',
+      'error-invalid-slot':    'Horario no válido. Por favor selecciona uno válido e intenta de nuevo.',
+      'error-invalid-details': 'Por favor verifica tus datos de contacto e intenta de nuevo.',
+      'error-week-limit':      'Ya tienes una cita esta semana. Solo se permite una por semana.',
+      'confirm-heading':       '¡Tu cita está confirmada!',
+      'confirm-sub':           'Te esperamos a la hora indicada. Guarda estos datos.',
+      'label-date':            'Fecha',
+      'label-time':            'Hora',
+      'label-name-row':        'Nombre',
+      'label-notes':           'Notas',
+      'label-booking-num':     'Reserva #',
+      'cancel-hint-pre':       '¿Necesitas cancelar? Usa el endpoint de la API',
+      'cancel-hint-post':      'con tu correo electrónico.',
+      'book-another':          'Reservar otra cita',
+    }
+  };
+
+  function applyLang(lang) {
+    const map = lang === 'es' ? I18N.es : {};
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = (lang === 'es' ? map[el.dataset.i18n] : el.dataset.i18nEn) ?? el.textContent;
+    });
+    document.getElementById('lang-toggle').textContent = lang === 'es' ? '🇺🇸' : '🇨🇷';
+    document.documentElement.lang = lang;
+  }
+
+  function toggleLang() {
+    const next = (localStorage.getItem('lang') || 'en') === 'en' ? 'es' : 'en';
+    localStorage.setItem('lang', next);
+    applyLang(next);
+  }
+
+  document.querySelectorAll('[data-i18n]').forEach(el => { el.dataset.i18nEn = el.textContent.trim(); });
+  applyLang(localStorage.getItem('lang') || 'en');
+</script>
 </body>
 </html>

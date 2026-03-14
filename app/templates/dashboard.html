@@ -30,11 +30,11 @@
 
 <!-- ── Error banner ──────────────────────────────────────────────── -->
 {% if block_error == "already_booked" %}
-<div class="alert alert-warning" role="alert">
+<div class="alert alert-warning" role="alert" data-i18n="error-already-booked">
   That slot already has a confirmed appointment and cannot be blocked.
 </div>
 {% elif block_error == "invalid" %}
-<div class="alert alert-danger" role="alert">
+<div class="alert alert-danger" role="alert" data-i18n="error-invalid">
   Invalid slot time. Please select a valid time from the list.
 </div>
 {% endif %}
@@ -44,21 +44,21 @@
 
   <div class="col-4">
     <div class="stat-card bg-white shadow-sm">
-      <div class="stat-label text-success">Confirmed</div>
+      <div class="stat-label text-success" data-i18n="stat-confirmed">Confirmed</div>
       <div class="stat-value text-success">{{ confirmed_count }}</div>
     </div>
   </div>
 
   <div class="col-4">
     <div class="stat-card bg-white shadow-sm">
-      <div class="stat-label text-secondary">Cancelled</div>
+      <div class="stat-label text-secondary" data-i18n="stat-cancelled">Cancelled</div>
       <div class="stat-value text-secondary">{{ cancelled_count }}</div>
     </div>
   </div>
 
   <div class="col-4">
     <div class="stat-card bg-white shadow-sm">
-      <div class="stat-label" style="color:#fd7e14;">Blocked</div>
+      <div class="stat-label" style="color:#fd7e14;" data-i18n="stat-blocked">Blocked</div>
       <div class="stat-value" style="color:#fd7e14;">{{ blocked_count }}</div>
     </div>
   </div>
@@ -67,7 +67,7 @@
 
 <!-- ── Block a slot ─────────────────────────────────────────────── -->
 <div class="bg-white shadow-sm rounded p-3 mb-4 d-flex align-items-center gap-3 flex-wrap">
-  <span style="font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6c757d;">
+  <span style="font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6c757d;" data-i18n="block-slot-label">
     Block a slot
   </span>
   <form method="post" action="/dashboard/block" class="d-flex align-items-center gap-2">
@@ -77,7 +77,7 @@
       <option value="{{ t }}">{{ t }}</option>
       {% endfor %}
     </select>
-    <button type="submit" class="btn btn-sm btn-outline-warning">Block</button>
+    <button type="submit" class="btn btn-sm btn-outline-warning" data-i18n="block-btn">Block</button>
   </form>
 </div>
 
@@ -87,10 +87,10 @@
   <table class="table appt-table mb-0">
     <thead>
       <tr>
-        <th style="width:90px;">Time</th>
-        <th>Customer</th>
-        <th>Phone</th>
-        <th style="width:110px;">Status</th>
+        <th style="width:90px;" data-i18n="th-time">Time</th>
+        <th data-i18n="th-customer">Customer</th>
+        <th data-i18n="th-phone">Phone</th>
+        <th style="width:110px;" data-i18n="th-status">Status</th>
         <th style="width:100px;"></th>
       </tr>
     </thead>
@@ -118,9 +118,9 @@
 
             <td>
               {% if appt.status == "confirmed" %}
-                <span class="badge-confirmed">Confirmed</span>
+                <span class="badge-confirmed" data-i18n="badge-confirmed">Confirmed</span>
               {% else %}
-                <span class="badge-cancelled">Cancelled</span>
+                <span class="badge-cancelled" data-i18n="badge-cancelled">Cancelled</span>
               {% endif %}
             </td>
 
@@ -129,7 +129,7 @@
               <form method="post" action="/dashboard/cancel/{{ appt.id }}"
                     onsubmit="return confirm('Cancel appointment for {{ appt.customer.full_name }} at {{ appt.start_time.strftime("%H:%M") }}?')">
                 <input type="hidden" name="target_date" value="{{ target_date }}" />
-                <button type="submit" class="btn btn-sm btn-outline-danger">Cancel</button>
+                <button type="submit" class="btn btn-sm btn-outline-danger" data-i18n="cancel-btn">Cancel</button>
               </form>
               {% endif %}
             </td>
@@ -143,12 +143,12 @@
             <td class="time-cell" style="color:#fd7e14;">{{ block.start_time.strftime("%H:%M") }}</td>
             <td><span class="text-secondary" style="font-size:0.9rem;">— Blocked —</span></td>
             <td></td>
-            <td><span class="badge-blocked">Blocked</span></td>
+            <td><span class="badge-blocked" data-i18n="badge-blocked">Blocked</span></td>
 
             <td class="text-end">
               <form method="post" action="/dashboard/unblock/{{ block.id }}">
                 <input type="hidden" name="target_date" value="{{ target_date }}" />
-                <button type="submit" class="btn btn-sm btn-outline-secondary">Unblock</button>
+                <button type="submit" class="btn btn-sm btn-outline-secondary" data-i18n="unblock-btn">Unblock</button>
               </form>
             </td>
 
@@ -163,8 +163,8 @@
 {% else %}
 <div class="bg-white rounded shadow-sm empty-state">
   <div class="icon">📅</div>
-  <p class="fw-semibold mb-1">No appointments or blocks for this day.</p>
-  <p class="mb-0" style="font-size:0.9rem;">Use the arrows or date picker to navigate to another date.</p>
+  <p class="fw-semibold mb-1" data-i18n="empty-title">No appointments or blocks for this day.</p>
+  <p class="mb-0" style="font-size:0.9rem;" data-i18n="empty-sub">Use the arrows or date picker to navigate to another date.</p>
 </div>
 {% endif %}
 
