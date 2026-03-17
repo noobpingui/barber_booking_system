@@ -5,8 +5,9 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from app.dependencies import get_db
+from app.dependencies import get_current_user_web, get_db
 from app.models.appointment import STATUS_CANCELLED, STATUS_CONFIRMED
+from app.models.user import User
 from app.services import appointment_service
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
@@ -38,6 +39,7 @@ def dashboard(
     target_date: date | None = None,
     block_error: str | None = None,
     db: Session = Depends(get_db),
+    _: User = Depends(get_current_user_web),
 ):
     if target_date is None:
         target_date = date.today()
@@ -70,6 +72,7 @@ def cancel_appointment(
     appointment_id: int,
     target_date: date = Form(...),
     db: Session = Depends(get_db),
+    _: User = Depends(get_current_user_web),
 ):
     appointment_service.barber_cancel_appointment(db, appointment_id)
     return RedirectResponse(url=f"/dashboard/?target_date={target_date}", status_code=303)
@@ -80,6 +83,7 @@ def block_slot(
     target_date: date = Form(...),
     slot_time: str = Form(...),
     db: Session = Depends(get_db),
+    _: User = Depends(get_current_user_web),
 ):
     try:
         start_time = datetime.combine(target_date, datetime.strptime(slot_time, "%H:%M").time())
@@ -105,6 +109,7 @@ def unblock_slot(
     blocked_slot_id: int,
     target_date: date = Form(...),
     db: Session = Depends(get_db),
+    _: User = Depends(get_current_user_web),
 ):
     appointment_service.unblock_slot(db, blocked_slot_id)
     return RedirectResponse(url=f"/dashboard/?target_date={target_date}", status_code=303)

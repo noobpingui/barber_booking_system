@@ -14,6 +14,9 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "jinja2>=3.1.0",
     "python-multipart>=0.0.9",  # required for Form(...) in FastAPI
+    # Auth
+    "PyJWT>=2.8.0",            # JWT encode/decode
+    "bcrypt>=4.0.0",           # password hashing
     # Production
     "psycopg2-binary>=2.9.9",  # PostgreSQL driver
     "gunicorn>=21.2.0",        # production process manager

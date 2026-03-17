@@ -187,6 +187,9 @@
       <div class="d-flex align-items-center gap-2">
         <a href="/dashboard/" class="nav-today" data-i18n="nav-today">Today</a>
         <button class="lang-btn" id="lang-toggle" onclick="toggleLang()">🇨🇷</button>
+        <form method="post" action="/auth/logout" class="d-inline m-0">
+          <button type="submit" class="lang-btn" style="font-size:0.8rem; padding:3px 10px;" data-i18n="nav-logout">Logout</button>
+        </form>
       </div>
     </div>
   </nav>
@@ -214,6 +217,7 @@
       'badge-cancelled':      'Cancelado',
       'badge-blocked':        'Bloqueado',
       'cancel-btn':           'Cancelar',
+      'nav-logout':           'Cerrar sesión',
       'unblock-btn':          'Desbloquear',
       'empty-title':          'No hay citas ni bloqueos para este día.',
       'empty-sub':            'Usa las flechas o el selector de fecha para navegar a otro día.',

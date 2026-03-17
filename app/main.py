@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
-from app.api.v1 import appointments, booking, customers, dashboard
+from app.api.v1 import appointments, auth, booking, customers, dashboard
 from app.config import settings
 from app.db.session import engine
 from app.models import base  # noqa: F401 — ensures Base is populated
@@ -33,6 +33,7 @@ app.include_router(customers.router, prefix="/api/v1")
 app.include_router(appointments.router, prefix="/api/v1")
 
 # HTML views
+app.include_router(auth.router)      # auth:            /login, /auth/login, /auth/logout, /auth/me
 app.include_router(booking.router)   # customer-facing: /booking/
 app.include_router(dashboard.router) # barber-facing:   /dashboard/
 

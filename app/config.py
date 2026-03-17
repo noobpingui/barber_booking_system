@@ -6,6 +6,11 @@ class Settings(BaseSettings):
     debug: bool = False
     cancellation_window_hours: int = 2  # minimum hours before appointment to allow cancellation
 
+    # Auth — MUST be overridden via .env in production.
+    secret_key: str = "dev-secret-change-me-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 480  # 8 hours
+
     # pydantic-settings will automatically read from a .env file
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
