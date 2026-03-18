@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./barber.db"
     debug: bool = False
-    cancellation_window_hours: int = 2  # minimum hours before appointment to allow cancellation
+    cancellation_window_hours: int = 1  # minimum hours before appointment to allow cancellation
 
     # Auth — MUST be overridden via .env in production.
     secret_key: str = "dev-secret-change-me-in-production"
