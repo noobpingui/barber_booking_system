@@ -17,6 +17,8 @@ dependencies = [
     # Auth
     "PyJWT>=2.8.0",            # JWT encode/decode
     "bcrypt>=4.0.0",           # password hashing
+    # Notifications
+    "boto3>=1.34.0",           # Amazon SES email
     # Production
     "psycopg2-binary>=2.9.9",  # PostgreSQL driver
     "gunicorn>=21.2.0",        # production process manager

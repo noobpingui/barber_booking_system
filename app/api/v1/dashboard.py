@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, time, timedelta
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -8,7 +9,9 @@ from sqlalchemy.orm import Session
 from app.dependencies import get_current_user_web, get_db
 from app.models.appointment import STATUS_CANCELLED, STATUS_CONFIRMED
 from app.models.user import User
-from app.services import appointment_service
+from app.services import appointment_service, customer_service, notification_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 templates = Jinja2Templates(directory="app/templates")
@@ -74,7 +77,22 @@ def cancel_appointment(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user_web),
 ):
-    appointment_service.barber_cancel_appointment(db, appointment_id)
+    appointment, reason = appointment_service.barber_cancel_appointment(db, appointment_id)
+
+    if reason == "ok" and appointment is not None:
+        customer = customer_service.get_customer_by_id(db, appointment.customer_id)
+        if customer:
+            try:
+                notification_service.send_booking_cancellation_email(
+                    to_email=customer.email,
+                    customer_name=customer.full_name,
+                    start_time=appointment.start_time,
+                )
+            except Exception:
+                logger.exception(
+                    "Failed to send cancellation email for appointment %d", appointment_id
+                )
+
     return RedirectResponse(url=f"/dashboard/?target_date={target_date}", status_code=303)
 
 

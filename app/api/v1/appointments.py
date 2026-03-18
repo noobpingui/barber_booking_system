@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -6,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.dependencies import get_db
 from app.schemas.appointment import AppointmentCancel, AppointmentCreate, AppointmentRead, AvailableSlot
-from app.services import appointment_service, customer_service
+from app.services import appointment_service, customer_service, notification_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/appointments", tags=["appointments"])
 
@@ -78,4 +81,18 @@ def cancel_appointment(
                 f"{settings.cancellation_window_hours} hours before the appointment."
             ),
         )
+
+    customer = customer_service.get_customer_by_id(db, appointment.customer_id)
+    if customer:
+        try:
+            notification_service.send_booking_cancellation_email(
+                to_email=customer.email,
+                customer_name=customer.full_name,
+                start_time=appointment.start_time,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send cancellation email for appointment %d", appointment.id
+            )
+
     return appointment

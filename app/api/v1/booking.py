@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -10,7 +11,9 @@ from app.dependencies import get_db
 from app.models.appointment import Appointment as ApptModel
 from app.schemas.appointment import AppointmentCreate
 from app.schemas.customer import CustomerCreate
-from app.services import appointment_service, customer_service
+from app.services import appointment_service, customer_service, notification_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/booking", tags=["booking"])
 templates = Jinja2Templates(directory="app/templates")
@@ -83,6 +86,17 @@ def submit_booking(
 
     appt_data.customer_id = customer.id
     appointment = appointment_service.create_appointment(db, appt_data)
+
+    try:
+        notification_service.send_booking_confirmation_email(
+            to_email=customer.email,
+            customer_name=customer.full_name,
+            start_time=appointment.start_time,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send booking confirmation email for appointment %d", appointment.id
+        )
 
     return RedirectResponse(
         url=f"/booking/confirmation?id={appointment.id}", status_code=303
