@@ -69,6 +69,12 @@ def _send_with_resend(to_email: str, subject: str, text_body: str, html_body: st
         },
         timeout=10,
     )
+    if response.is_error:
+        logger.error(
+            "Resend API error — status: %s, body: %s",
+            response.status_code,
+            response.text,
+        )
     response.raise_for_status()
     logger.info("Email sent via Resend to %s — %s", to_email, subject)
 
