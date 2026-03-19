@@ -11,12 +11,17 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 480  # 8 hours
 
-    # Amazon SES — leave empty to disable email notifications.
-    # If aws_access_key_id is empty, boto3 falls back to the IAM role attached to the EC2 instance.
+    # Email notifications — set EMAIL_PROVIDER to "resend" (default) or "ses".
+    # Leave email_from empty to disable all email notifications.
+    email_provider: str = "resend"
+    email_from: str = ""        # e.g. "noreply@booking.betofallas.dev"
+    resend_api_key: str = ""    # required when email_provider=resend
+
+    # Amazon SES — only needed when email_provider=ses.
+    # Leave aws_access_key_id empty to use the EC2 instance's IAM role instead.
     aws_access_key_id: str = ""
     aws_secret_access_key: str = ""
     aws_region: str = "us-east-1"
-    ses_from_email: str = "noreply@booking.betofallas.dev"
 
     # pydantic-settings will automatically read from a .env file
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")

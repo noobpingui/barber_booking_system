@@ -1,10 +1,14 @@
 """
-Email notification service using Amazon SES.
+Email notification service.
 
-All public functions are fire-and-forget: callers should wrap them in
-try/except and log any exception — email failures must never fail a booking.
+Supports two providers, selected via EMAIL_PROVIDER in .env:
+  - "resend"  (default) — uses the Resend API over HTTPS
+  - "ses"               — uses AWS SES via boto3
 
-If SES_FROM_EMAIL is not configured the functions return immediately,
+Public functions are fire-and-forget: callers must wrap them in try/except
+and log any exception — email failures must never fail a booking operation.
+
+If EMAIL_FROM is not configured the functions return immediately,
 so the service is safely inert in local development.
 """
 
@@ -12,16 +16,68 @@ import logging
 from datetime import datetime
 
 import boto3
+import httpx
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Lazy singleton — created on first send attempt.
+_SENDER_NAME = "Bailey Barbershop"
+_RESEND_API_URL = "https://api.resend.com/emails"
+
+# ── Date/time formatting ───────────────────────────────────────────────────────
+
+_DAYS_ES = (
+    "lunes", "martes", "miércoles", "jueves",
+    "viernes", "sábado", "domingo",
+)
+_MONTHS_ES = (
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre",
+)
+
+
+def _format_date_es(dt: datetime) -> str:
+    """Return a fully Spanish date string, e.g. 'miércoles, 18 de marzo de 2026'."""
+    day_name = _DAYS_ES[dt.weekday()]
+    month_name = _MONTHS_ES[dt.month - 1]
+    return f"{day_name}, {dt.day} de {month_name} de {dt.year}"
+
+
+def _format_time(dt: datetime) -> str:
+    """Return a clean 12-hour time string, e.g. '9:30 AM'."""
+    return dt.strftime("%I:%M %p").lstrip("0")
+
+
+# ── Provider implementations ───────────────────────────────────────────────────
+
+def _send_with_resend(to_email: str, subject: str, text_body: str, html_body: str) -> None:
+    """Send via the Resend HTTP API. Raises on non-2xx response."""
+    if not settings.resend_api_key:
+        logger.warning("RESEND_API_KEY not configured — skipping email to %s", to_email)
+        return
+
+    response = httpx.post(
+        _RESEND_API_URL,
+        headers={"Authorization": f"Bearer {settings.resend_api_key}"},
+        json={
+            "from": f"{_SENDER_NAME} <{settings.email_from}>",
+            "to": [to_email],
+            "subject": subject,
+            "text": text_body,
+            "html": html_body,
+        },
+        timeout=10,
+    )
+    response.raise_for_status()
+    logger.info("Email sent via Resend to %s — %s", to_email, subject)
+
+
+# Lazy SES client singleton — created on first use, reused across requests.
 _ses_client = None
 
 
-def _get_client():
+def _get_ses_client():
     global _ses_client
     if _ses_client is not None:
         return _ses_client
@@ -37,14 +93,10 @@ def _get_client():
     return _ses_client
 
 
-def _send_email(to_email: str, subject: str, text_body: str, html_body: str) -> None:
-    """Low-level SES send. Raises on failure — callers handle exceptions."""
-    if not settings.ses_from_email:
-        logger.debug("SES_FROM_EMAIL not configured — skipping email to %s", to_email)
-        return
-
-    _get_client().send_email(
-        Source=f"Bailey Barbershop <{settings.ses_from_email}>",
+def _send_with_ses(to_email: str, subject: str, text_body: str, html_body: str) -> None:
+    """Send via AWS SES. Raises on failure."""
+    _get_ses_client().send_email(
+        Source=f"{_SENDER_NAME} <{settings.email_from}>",
         Destination={"ToAddresses": [to_email]},
         Message={
             "Subject": {"Data": subject, "Charset": "UTF-8"},
@@ -54,7 +106,25 @@ def _send_email(to_email: str, subject: str, text_body: str, html_body: str) -> 
             },
         },
     )
-    logger.info("Email sent to %s — %s", to_email, subject)
+    logger.info("Email sent via SES to %s — %s", to_email, subject)
+
+
+def _send_email(to_email: str, subject: str, text_body: str, html_body: str) -> None:
+    """Route to the configured provider. Returns immediately if EMAIL_FROM is unset."""
+    if not settings.email_from:
+        logger.debug("EMAIL_FROM not configured — skipping email to %s", to_email)
+        return
+
+    if settings.email_provider == "resend":
+        _send_with_resend(to_email, subject, text_body, html_body)
+    elif settings.email_provider == "ses":
+        _send_with_ses(to_email, subject, text_body, html_body)
+    else:
+        logger.warning(
+            "Unknown EMAIL_PROVIDER '%s' — skipping email to %s",
+            settings.email_provider,
+            to_email,
+        )
 
 
 # ── HTML builders ──────────────────────────────────────────────────────────────
@@ -225,8 +295,8 @@ def send_booking_confirmation_email(
     start_time: datetime,
 ) -> None:
     """Send an appointment confirmation email to the customer."""
-    date_str = start_time.strftime("%A, %d de %B de %Y")
-    time_str = start_time.strftime("%I:%M %p").lstrip("0")
+    date_str = _format_date_es(start_time)
+    time_str = _format_time(start_time)
 
     subject = f"Cita confirmada — {date_str} a las {time_str}"
 
@@ -255,8 +325,8 @@ def send_booking_cancellation_email(
     start_time: datetime,
 ) -> None:
     """Send an appointment cancellation notice to the customer."""
-    date_str = start_time.strftime("%A, %d de %B de %Y")
-    time_str = start_time.strftime("%I:%M %p").lstrip("0")
+    date_str = _format_date_es(start_time)
+    time_str = _format_time(start_time)
 
     subject = f"Cita cancelada — {date_str} a las {time_str}"
 
