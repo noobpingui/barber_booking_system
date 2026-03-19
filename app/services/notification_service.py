@@ -293,6 +293,147 @@ def _cancellation_html(customer_name: str, date_str: str, time_str: str) -> str:
     )
 
 
+def _verification_html(
+    customer_name: str,
+    date_str: str,
+    time_str: str,
+    confirm_url: str,
+    cancel_url: str | None,
+) -> str:
+    """HTML email asking the customer to click the confirm link to finalise their hold."""
+    cancel_block = ""
+    if cancel_url:
+        cancel_block = (
+            f'<p style="margin:16px 0 0 0; font-size:13px; color:#9ca3af;">'
+            f'¿Cambiaste de opinión? '
+            f'<a href="{cancel_url}" style="color:#6b7280; text-decoration:underline;">'
+            f'Cancelar esta reserva</a></p>'
+        )
+
+    expiry_note = (
+        f'<p style="margin:24px 0 0 0; font-size:12px; color:#9ca3af; line-height:1.5;">'
+        f'Este enlace es v&aacute;lido por <strong>{settings.hold_minutes} minutos</strong>. '
+        f'Si expira, simplemente realiza una nueva reserva.</p>'
+    )
+
+    return f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0; padding:0; background-color:#f4f4f5; font-family:Arial,Helvetica,sans-serif;">
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0"
+         style="background-color:#f4f4f5; padding:40px 16px;">
+    <tr>
+      <td align="center">
+
+        <table cellpadding="0" cellspacing="0" border="0"
+               style="max-width:600px; width:100%; background-color:#ffffff;
+                      border-radius:8px; overflow:hidden; border:1px solid #e5e7eb;">
+
+          <!-- Header -->
+          <tr>
+            <td align="center" bgcolor="#111111"
+                style="background-color:#111111; padding:28px 32px;">
+              <span style="color:#ffffff; font-size:20px; font-weight:bold; letter-spacing:1px;">
+                &#9988; Bailey Barbershop
+              </span>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 40px 32px 40px;">
+
+              <h1 style="margin:0 0 6px 0; font-size:22px; font-weight:bold; color:#111111;">
+                Confirma tu cita
+              </h1>
+              <p style="margin:0 0 28px 0; font-size:14px; color:#6b7280;">
+                Tu reserva est&aacute; pendiente. Haz clic en el bot&oacute;n para confirmarla.
+              </p>
+
+              <p style="margin:0 0 24px 0; font-size:15px; color:#374151;">
+                Hola <strong>{customer_name}</strong>,
+              </p>
+
+              <!-- Detail card -->
+              <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                     style="background-color:#f9fafb; border-radius:6px;
+                            border:1px solid #e5e7eb; margin-bottom:28px;">
+                <tr>
+                  <td style="padding:20px 24px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="padding-bottom:14px;">
+                          <span style="display:block; font-size:11px; font-weight:bold;
+                                       text-transform:uppercase; letter-spacing:0.8px;
+                                       color:#9ca3af; margin-bottom:4px;">Fecha</span>
+                          <span style="font-size:16px; font-weight:bold; color:#111111;">
+                            {date_str}
+                          </span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="border-top:1px solid #e5e7eb;"></td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top:14px;">
+                          <span style="display:block; font-size:11px; font-weight:bold;
+                                       text-transform:uppercase; letter-spacing:0.8px;
+                                       color:#9ca3af; margin-bottom:4px;">Hora</span>
+                          <span style="font-size:16px; font-weight:bold; color:#111111;">
+                            {time_str}
+                          </span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Confirm button -->
+              <table cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" bgcolor="#111111"
+                      style="background-color:#111111; border-radius:6px;">
+                    <a href="{confirm_url}"
+                       style="display:inline-block; padding:14px 36px; color:#ffffff;
+                              font-size:16px; font-weight:bold; text-decoration:none;
+                              letter-spacing:0.3px;">
+                      Confirmar mi cita
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              {cancel_block}
+              {expiry_note}
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center"
+                style="padding:20px 32px; border-top:1px solid #e5e7eb; background-color:#f9fafb;">
+              <p style="margin:0; font-size:12px; color:#9ca3af; line-height:1.5;">
+                Bailey Barbershop<br>
+                Este es un mensaje autom&aacute;tico, por favor no respondas a este correo.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>"""
+
+
 # ── Public functions ───────────────────────────────────────────────────────────
 
 def send_booking_confirmation_email(
@@ -349,4 +490,45 @@ def send_booking_cancellation_email(
         subject=subject,
         text_body=text_body,
         html_body=_cancellation_html(customer_name, date_str, time_str),
+    )
+
+
+def send_booking_verification_email(
+    to_email: str,
+    customer_name: str,
+    start_time: datetime,
+    confirm_url: str,
+    cancel_url: str | None,
+) -> None:
+    """
+    Send the email-verification / hold-confirmation email.
+    The customer must click confirm_url to finalise their booking.
+    cancel_url is included when the appointment is still within the cancellation window.
+    """
+    date_str = _format_date_es(start_time)
+    time_str = _format_time(start_time)
+
+    subject = f"Confirma tu cita — {date_str} a las {time_str}"
+
+    cancel_line = (
+        f"\nSi deseas cancelar: {cancel_url}\n"
+        if cancel_url
+        else ""
+    )
+
+    text_body = (
+        f"Hola {customer_name},\n\n"
+        f"Tu reserva está pendiente de confirmación. Haz clic en el enlace para confirmarla:\n\n"
+        f"  {confirm_url}\n"
+        f"{cancel_line}\n"
+        f"Este enlace expira en {settings.hold_minutes} minutos.\n\n"
+        f"Gracias por tu preferencia,\n"
+        f"Bailey Barbershop"
+    )
+
+    _send_email(
+        to_email=to_email,
+        subject=subject,
+        text_body=text_body,
+        html_body=_verification_html(customer_name, date_str, time_str, confirm_url, cancel_url),
     )

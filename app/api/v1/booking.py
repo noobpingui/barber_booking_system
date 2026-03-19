@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from pydantic import ValidationError
 from sqlalchemy.orm import Session, joinedload
 
+from app.core import tokens as token_utils
 from app.dependencies import get_db
 from app.models.appointment import Appointment as ApptModel
 from app.schemas.appointment import AppointmentCreate
@@ -20,10 +21,7 @@ templates = Jinja2Templates(directory="app/templates")
 
 
 @router.get("/", response_class=HTMLResponse)
-def booking_page(
-    request: Request,
-    error: str | None = None,
-):
+def booking_page(request: Request, error: str | None = None):
     today, max_date = appointment_service.get_booking_window()
     return templates.TemplateResponse(
         "booking.html",
@@ -66,13 +64,12 @@ def submit_booking(
 
     # Validate the appointment slot (business hours, 30-min boundary, lead time).
     try:
-        appt_data = AppointmentCreate(
-            customer_id=0,  # placeholder — set below after customer lookup
-            start_time=slot_dt,
-            notes=notes or None,
-        )
+        AppointmentCreate(customer_id=0, start_time=slot_dt, notes=notes or None)
     except ValidationError:
         return RedirectResponse(url="/booking/?error=invalid_slot", status_code=303)
+
+    # Expire stale holds before checking availability.
+    appointment_service.expire_old_holds(db)
 
     # Hard check: slot must still be free at write time.
     if appointment_service.is_slot_taken(db, slot_dt):
@@ -80,22 +77,46 @@ def submit_booking(
 
     customer = customer_service.get_or_create_customer(db, customer_data)
 
-    # Hard check: one appointment per customer per 7-day rolling window.
+    # Hard check: one appointment per customer per 7-day rolling window (confirmed or active hold).
     if appointment_service.has_appointment_in_booking_window(db, customer.id):
         return RedirectResponse(url="/booking/?error=week_limit", status_code=303)
 
-    appt_data.customer_id = customer.id
-    appointment = appointment_service.create_appointment(db, appt_data)
+    # Generate email verification token (always).
+    email_token = token_utils.generate_token()
+    email_token_hash = token_utils.hash_token(email_token)
+
+    # Generate cancel token only when the appointment is far enough in the future.
+    cancel_token = None
+    cancel_token_hash = None
+    if appointment_service.is_cancellable(slot_dt):
+        cancel_token = token_utils.generate_token()
+        cancel_token_hash = token_utils.hash_token(cancel_token)
+
+    appointment = appointment_service.create_hold(
+        db=db,
+        customer_id=customer.id,
+        start_time=slot_dt,
+        notes=notes or None,
+        email_token_hash=email_token_hash,
+        cancel_token_hash=cancel_token_hash,
+    )
+
+    # Build one-time URLs; base_url includes scheme + host from the incoming request.
+    base_url = str(request.base_url).rstrip("/")
+    confirm_url = f"{base_url}/booking/confirm?token={email_token}"
+    cancel_url = f"{base_url}/booking/cancel?token={cancel_token}" if cancel_token else None
 
     try:
-        notification_service.send_booking_confirmation_email(
+        notification_service.send_booking_verification_email(
             to_email=customer.email,
             customer_name=customer.full_name,
             start_time=appointment.start_time,
+            confirm_url=confirm_url,
+            cancel_url=cancel_url,
         )
     except Exception:
         logger.exception(
-            "Failed to send booking confirmation email for appointment %d", appointment.id
+            "Failed to send verification email for appointment %d", appointment.id
         )
 
     return RedirectResponse(
@@ -104,11 +125,8 @@ def submit_booking(
 
 
 @router.get("/confirmation", response_class=HTMLResponse)
-def booking_confirmation(
-    request: Request,
-    id: int,
-    db: Session = Depends(get_db),
-):
+def booking_confirmation(request: Request, id: int, db: Session = Depends(get_db)):
+    """Pending page — shown immediately after form submission while the hold is active."""
     appointment = (
         db.query(ApptModel)
         .options(joinedload(ApptModel.customer))
@@ -121,4 +139,52 @@ def booking_confirmation(
     return templates.TemplateResponse(
         "booking_confirmation.html",
         {"request": request, "appointment": appointment},
+    )
+
+
+@router.get("/confirm", response_class=HTMLResponse)
+def confirm_booking(request: Request, token: str, db: Session = Depends(get_db)):
+    """Email verification link — confirms the hold and finalises the booking."""
+    appointment_service.expire_old_holds(db)
+
+    token_hash = token_utils.hash_token(token)
+    appointment, reason = appointment_service.confirm_appointment_by_token(db, token_hash)
+
+    if reason != "ok":
+        # Load appointment for display even on error, if available.
+        return templates.TemplateResponse(
+            "booking_confirmed.html",
+            {"request": request, "appointment": None, "error": reason},
+            status_code=400,
+        )
+
+    # Reload with customer joined for display.
+    appointment = (
+        db.query(ApptModel)
+        .options(joinedload(ApptModel.customer))
+        .filter(ApptModel.id == appointment.id)
+        .first()
+    )
+    return templates.TemplateResponse(
+        "booking_confirmed.html",
+        {"request": request, "appointment": appointment, "error": None},
+    )
+
+
+@router.get("/cancel", response_class=HTMLResponse)
+def cancel_booking(request: Request, token: str, db: Session = Depends(get_db)):
+    """Cancellation link — cancels a hold or confirmed appointment."""
+    token_hash = token_utils.hash_token(token)
+    appointment, reason = appointment_service.cancel_appointment_by_token(db, token_hash)
+
+    if reason != "ok":
+        return templates.TemplateResponse(
+            "booking_cancelled.html",
+            {"request": request, "appointment": None, "error": reason},
+            status_code=400,
+        )
+
+    return templates.TemplateResponse(
+        "booking_cancelled.html",
+        {"request": request, "appointment": appointment, "error": None},
     )

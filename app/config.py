@@ -5,6 +5,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./barber.db"
     debug: bool = False
     cancellation_window_hours: int = 1  # minimum hours before appointment to allow cancellation
+    hold_minutes: int = 10              # how long an unconfirmed hold blocks a slot
 
     # Auth — MUST be overridden via .env in production.
     secret_key: str = "dev-secret-change-me-in-production"

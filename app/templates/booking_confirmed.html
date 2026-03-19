@@ -1,0 +1,72 @@
+{% extends "booking_base.html" %}
+{% block title %}{% if error %}Error{% else %}Cita Confirmada{% endif %}{% endblock %}
+
+{% block content %}
+
+{% if error %}
+
+  <div class="section-card text-center py-5">
+    <div class="confirm-icon mb-3">⚠️</div>
+    {% if error == "expired" %}
+      <h2 class="fw-bold mb-2" data-i18n="confirm-error-expired-title">Link expired</h2>
+      <p class="text-secondary mb-4" data-i18n="confirm-error-expired-sub">
+        The confirmation link has expired. Please book again — it only takes a moment.
+      </p>
+    {% elif error == "wrong_status" %}
+      <h2 class="fw-bold mb-2" data-i18n="confirm-error-used-title">Already processed</h2>
+      <p class="text-secondary mb-4" data-i18n="confirm-error-used-sub">
+        This booking has already been confirmed or cancelled.
+      </p>
+    {% else %}
+      <h2 class="fw-bold mb-2" data-i18n="confirm-error-invalid-title">Invalid link</h2>
+      <p class="text-secondary mb-4" data-i18n="confirm-error-invalid-sub">
+        This confirmation link is not valid. Please book again.
+      </p>
+    {% endif %}
+    <a href="/booking/" class="btn btn-outline-dark" data-i18n="book-another">Book another appointment</a>
+  </div>
+
+{% else %}
+
+  <div class="section-card text-center py-5">
+    <div class="confirm-icon mb-3">✅</div>
+    <h2 class="fw-bold mb-1" data-i18n="confirm-heading">You're booked!</h2>
+    <p class="text-secondary mb-4" data-i18n="confirm-sub">Your appointment is confirmed. We'll see you then.</p>
+
+    <div class="text-start d-inline-block">
+      <table class="table table-borderless mb-0 confirm-detail">
+        <tbody>
+          <tr>
+            <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-date">Date</td>
+            <td class="fw-bold">{{ appointment.start_time.strftime("%A, %d %B %Y") }}</td>
+          </tr>
+          <tr>
+            <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-time">Time</td>
+            <td class="fw-bold">{{ appointment.start_time.strftime("%H:%M") }}</td>
+          </tr>
+          <tr>
+            <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-name-row">Name</td>
+            <td>{{ appointment.customer.full_name }}</td>
+          </tr>
+          {% if appointment.notes %}
+          <tr>
+            <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-notes">Notes</td>
+            <td>{{ appointment.notes }}</td>
+          </tr>
+          {% endif %}
+          <tr>
+            <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-booking-num">Booking #</td>
+            <td class="text-secondary">{{ appointment.id }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="text-center mt-2">
+    <a href="/booking/" class="btn btn-outline-dark" data-i18n="book-another">Book another appointment</a>
+  </div>
+
+{% endif %}
+
+{% endblock %}

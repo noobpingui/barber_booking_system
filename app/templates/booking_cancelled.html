@@ -1,0 +1,45 @@
+{% extends "booking_base.html" %}
+{% block title %}{% if error %}Error{% else %}Cita Cancelada{% endif %}{% endblock %}
+
+{% block content %}
+
+{% if error %}
+
+  <div class="section-card text-center py-5">
+    <div class="confirm-icon mb-3">⚠️</div>
+    {% if error == "expired" %}
+      <h2 class="fw-bold mb-2" data-i18n="cancel-error-expired-title">Cancellation window closed</h2>
+      <p class="text-secondary mb-4" data-i18n="cancel-error-expired-sub">
+        This appointment can no longer be cancelled via link. Please contact us directly.
+      </p>
+    {% elif error == "already_done" %}
+      <h2 class="fw-bold mb-2" data-i18n="cancel-error-done-title">Already cancelled</h2>
+      <p class="text-secondary mb-4" data-i18n="cancel-error-done-sub">
+        This appointment has already been cancelled.
+      </p>
+    {% else %}
+      <h2 class="fw-bold mb-2" data-i18n="cancel-error-invalid-title">Invalid link</h2>
+      <p class="text-secondary mb-4" data-i18n="cancel-error-invalid-sub">
+        This cancellation link is not valid.
+      </p>
+    {% endif %}
+    <a href="/booking/" class="btn btn-outline-dark" data-i18n="book-another">Book another appointment</a>
+  </div>
+
+{% else %}
+
+  <div class="section-card text-center py-5">
+    <div class="confirm-icon mb-3">✓</div>
+    <h2 class="fw-bold mb-1" data-i18n="cancelled-heading">Booking cancelled</h2>
+    <p class="text-secondary mb-4" data-i18n="cancelled-sub">
+      Your appointment has been cancelled. No further action is needed.
+    </p>
+  </div>
+
+  <div class="text-center mt-2">
+    <a href="/booking/" class="btn btn-outline-dark" data-i18n="book-another">Book another appointment</a>
+  </div>
+
+{% endif %}
+
+{% endblock %}

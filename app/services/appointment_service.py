@@ -1,9 +1,16 @@
 from datetime import date, datetime, time, timedelta, timezone as tz
 
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
-from app.models.appointment import STATUS_CANCELLED, STATUS_CONFIRMED, Appointment
+from app.models.appointment import (
+    STATUS_CANCELLED,
+    STATUS_CONFIRMED,
+    STATUS_EXPIRED,
+    STATUS_HOLD,
+    Appointment,
+)
 from app.models.blocked_slot import BlockedSlot
 from app.models.customer import Customer
 from app.schemas.appointment import AppointmentCreate
@@ -45,6 +52,23 @@ def _day_bounds(target_date: date) -> tuple[datetime, datetime]:
     )
 
 
+# ── Hold management ───────────────────────────────────────────────────────────
+
+def expire_old_holds(db: Session) -> None:
+    """Bulk-expire holds whose hold_expires_at has passed. Call before availability checks."""
+    db.query(Appointment).filter(
+        Appointment.status == STATUS_HOLD,
+        Appointment.hold_expires_at <= _local_now(),
+    ).update({"status": STATUS_EXPIRED}, synchronize_session=False)
+    db.commit()
+
+
+def is_cancellable(start_time: datetime) -> bool:
+    """Return True if the cancellation window hasn't closed for this start_time."""
+    cutoff = start_time - timedelta(hours=settings.cancellation_window_hours)
+    return _local_now() < cutoff
+
+
 # ── Appointment queries ────────────────────────────────────────────────────────
 
 def get_appointment_by_id(db: Session, appointment_id: int) -> Appointment | None:
@@ -79,17 +103,24 @@ def get_appointments_by_date(db: Session, target_date: date) -> list[Appointment
 # ── Slot availability ──────────────────────────────────────────────────────────
 
 def is_slot_taken(db: Session, start_time: datetime) -> bool:
-    """Return True if the slot is occupied by a confirmed appointment or a block."""
-    confirmed = (
+    """Return True if the slot is occupied by a confirmed appointment, an active hold, or a block."""
+    now = _local_now()
+    taken = (
         db.query(Appointment)
         .filter(
             Appointment.start_time == start_time,
-            Appointment.status == STATUS_CONFIRMED,
+            or_(
+                Appointment.status == STATUS_CONFIRMED,
+                and_(
+                    Appointment.status == STATUS_HOLD,
+                    Appointment.hold_expires_at > now,
+                ),
+            ),
         )
         .first()
         is not None
     )
-    if confirmed:
+    if taken:
         return True
     return (
         db.query(BlockedSlot).filter(BlockedSlot.start_time == start_time).first()
@@ -110,14 +141,21 @@ def get_available_slots(db: Session, target_date: date) -> list[datetime]:
         all_slots.append(current)
         current += _SLOT_DURATION
 
-    # Confirmed bookings for this date
+    # Confirmed bookings and active holds for this date
+    now = _local_now()
     booked: set[datetime] = {
         row.start_time
         for row in db.query(Appointment.start_time)
         .filter(
             Appointment.start_time >= day_start,
             Appointment.start_time < day_end,
-            Appointment.status == STATUS_CONFIRMED,
+            or_(
+                Appointment.status == STATUS_CONFIRMED,
+                and_(
+                    Appointment.status == STATUS_HOLD,
+                    Appointment.hold_expires_at > now,
+                ),
+            ),
         )
         .all()
     }
@@ -147,11 +185,18 @@ def has_appointment_in_booking_window(db: Session, customer_id: int) -> bool:
     today = _local_today()
     window_start = datetime.combine(today, time.min)
     window_end = datetime.combine(today + timedelta(days=7), time.min)
+    now = _local_now()
     return (
         db.query(Appointment)
         .filter(
             Appointment.customer_id == customer_id,
-            Appointment.status == STATUS_CONFIRMED,
+            or_(
+                Appointment.status == STATUS_CONFIRMED,
+                and_(
+                    Appointment.status == STATUS_HOLD,
+                    Appointment.hold_expires_at > now,
+                ),
+            ),
             Appointment.start_time >= window_start,
             Appointment.start_time < window_end,
         )
@@ -163,6 +208,7 @@ def has_appointment_in_booking_window(db: Session, customer_id: int) -> bool:
 # ── Appointment writes ─────────────────────────────────────────────────────────
 
 def create_appointment(db: Session, data: AppointmentCreate) -> Appointment:
+    """Legacy direct-confirm path (used by the JSON API). Prefer create_hold for HTML flow."""
     appointment = Appointment(
         customer_id=data.customer_id,
         start_time=data.start_time,
@@ -173,6 +219,125 @@ def create_appointment(db: Session, data: AppointmentCreate) -> Appointment:
     db.commit()
     db.refresh(appointment)
     return appointment
+
+
+def create_hold(
+    db: Session,
+    customer_id: int,
+    start_time: datetime,
+    notes: str | None,
+    email_token_hash: str,
+    cancel_token_hash: str | None,
+) -> Appointment:
+    """
+    Create an unconfirmed appointment hold.
+
+    The slot is reserved for hold_minutes while the customer verifies their email.
+    cancel_token_hash may be None when the appointment is too close to allow cancellation.
+    """
+    now = _local_now()
+    expiry = now + timedelta(minutes=settings.hold_minutes)
+    cancel_expiry = (
+        start_time - timedelta(hours=settings.cancellation_window_hours)
+        if cancel_token_hash
+        else None
+    )
+
+    appointment = Appointment(
+        customer_id=customer_id,
+        start_time=start_time,
+        notes=notes,
+        status=STATUS_HOLD,
+        hold_expires_at=expiry,
+        email_verification_token_hash=email_token_hash,
+        email_verification_expires_at=expiry,
+        cancel_token_hash=cancel_token_hash,
+        cancel_token_expires_at=cancel_expiry,
+    )
+    db.add(appointment)
+    db.commit()
+    db.refresh(appointment)
+    return appointment
+
+
+def confirm_appointment_by_token(
+    db: Session, token_hash: str
+) -> tuple[Appointment | None, str]:
+    """
+    Confirm a hold via its email verification token.
+    Returns (appointment, reason) where reason is:
+      "ok"           — confirmed successfully
+      "not_found"    — no appointment with this token hash
+      "wrong_status" — appointment is not in hold status (already confirmed, cancelled, etc.)
+      "expired"      — hold or verification window has passed
+    """
+    appointment = (
+        db.query(Appointment)
+        .filter(Appointment.email_verification_token_hash == token_hash)
+        .first()
+    )
+    if appointment is None:
+        return None, "not_found"
+
+    if appointment.status != STATUS_HOLD:
+        return appointment, "wrong_status"
+
+    now = _local_now()
+    if (
+        appointment.hold_expires_at is None
+        or appointment.email_verification_expires_at is None
+        or now > appointment.hold_expires_at
+        or now > appointment.email_verification_expires_at
+    ):
+        return appointment, "expired"
+
+    now = _local_now()
+    appointment.status = STATUS_CONFIRMED
+    appointment.confirmed_at = now
+    appointment.email_verified_at = now
+    appointment.hold_expires_at = None
+    appointment.email_verification_token_hash = None
+    appointment.email_verification_expires_at = None
+    db.commit()
+    db.refresh(appointment)
+    return appointment, "ok"
+
+
+def cancel_appointment_by_token(
+    db: Session, token_hash: str
+) -> tuple[Appointment | None, str]:
+    """
+    Cancel an appointment via its cancel token (sent in the verification email).
+    Returns (appointment, reason):
+      "ok"          — cancelled successfully
+      "not_found"   — no appointment with this token hash
+      "already_done" — already cancelled or expired
+      "expired"     — cancellation window has passed
+    """
+    appointment = (
+        db.query(Appointment)
+        .filter(Appointment.cancel_token_hash == token_hash)
+        .first()
+    )
+    if appointment is None:
+        return None, "not_found"
+
+    if appointment.status in (STATUS_CANCELLED, STATUS_EXPIRED):
+        return appointment, "already_done"
+
+    now = _local_now()
+    if appointment.cancel_token_expires_at is None or now > appointment.cancel_token_expires_at:
+        return appointment, "expired"
+
+    appointment.status = STATUS_CANCELLED
+    appointment.cancelled_at = now
+    appointment.cancel_token_hash = None
+    appointment.cancel_token_expires_at = None
+    appointment.email_verification_token_hash = None
+    appointment.email_verification_expires_at = None
+    db.commit()
+    db.refresh(appointment)
+    return appointment, "ok"
 
 
 def cancel_appointment(

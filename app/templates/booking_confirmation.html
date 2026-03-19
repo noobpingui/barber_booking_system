@@ -1,16 +1,22 @@
 {% extends "booking_base.html" %}
-{% block title %}Appointment Confirmed{% endblock %}
+{% block title %}Confirma tu cita{% endblock %}
 
 {% block content %}
 
 <div class="section-card text-center py-5">
-  <div class="confirm-icon mb-3">✅</div>
-  <h2 class="fw-bold mb-1" data-i18n="confirm-heading">You're booked!</h2>
-  <p class="text-secondary mb-4" data-i18n="confirm-sub">We'll see you at the time below. Save these details.</p>
+  <div class="confirm-icon mb-3">📧</div>
+  <h2 class="fw-bold mb-2" data-i18n="pending-heading">Check your email</h2>
+  <p class="text-secondary mb-4" data-i18n="pending-sub">
+    We sent a confirmation link to your inbox. Click it to finalise your booking.
+  </p>
 
-  <div class="text-start d-inline-block">
+  <div class="text-start d-inline-block mb-4">
     <table class="table table-borderless mb-0 confirm-detail">
       <tbody>
+        <tr>
+          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-email-sent">Email</td>
+          <td class="fw-bold">{{ appointment.customer.email }}</td>
+        </tr>
         <tr>
           <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-date">Date</td>
           <td class="fw-bold">{{ appointment.start_time.strftime("%A, %d %B %Y") }}</td>
@@ -19,31 +25,16 @@
           <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-time">Time</td>
           <td class="fw-bold">{{ appointment.start_time.strftime("%H:%M") }}</td>
         </tr>
-        <tr>
-          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-name-row">Name</td>
-          <td>{{ appointment.customer.full_name }}</td>
-        </tr>
-        {% if appointment.notes %}
-        <tr>
-          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-notes">Notes</td>
-          <td>{{ appointment.notes }}</td>
-        </tr>
-        {% endif %}
-        <tr>
-          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-booking-num">Booking #</td>
-          <td class="text-secondary">{{ appointment.id }}</td>
-        </tr>
       </tbody>
     </table>
+  </div>
+
+  <div class="alert alert-warning d-inline-block px-4 py-2" style="font-size:0.88rem; border-radius:8px;">
+    <span data-i18n="pending-expiry">The link expires in 10 minutes. If it expires, simply book again.</span>
   </div>
 </div>
 
 <div class="text-center mt-2">
-  <p class="text-secondary mb-3" style="font-size:0.9rem;">
-    <span data-i18n="cancel-hint-pre">Need to cancel? Use the API endpoint</span>
-    <code>PATCH /api/v1/appointments/{{ appointment.id }}/cancel</code>
-    <span data-i18n="cancel-hint-post">with your email address.</span>
-  </p>
   <a href="/booking/" class="btn btn-outline-dark" data-i18n="book-another">Book another appointment</a>
 </div>
 
