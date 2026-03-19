@@ -87,6 +87,14 @@
       border-left-color: #fd7e14;
       background-color: #fff8f0;
     }
+    .appt-table tbody tr.row-hold {
+      border-left-color: #0d6efd;
+      background-color: #f0f6ff;
+    }
+    .appt-table tbody tr.row-expired {
+      border-left-color: #dee2e6;
+      color: #adb5bd;
+    }
     .time-cell {
       font-size: 1rem;
       font-weight: 700;
@@ -132,6 +140,23 @@
       font-weight: 600;
       padding: 4px 8px;
       border-radius: 20px;
+    }
+    .badge-hold {
+      background-color: #cfe2ff;
+      color: #084298;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 20px;
+    }
+    .badge-expired {
+      background-color: #e9ecef;
+      color: #6c757d;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-style: italic;
     }
 
     /* Date navigation */
@@ -216,6 +241,8 @@
       'badge-confirmed':      'Confirmado',
       'badge-cancelled':      'Cancelado',
       'badge-blocked':        'Bloqueado',
+      'badge-hold':           'Pendiente',
+      'badge-expired':        'Expirado',
       'cancel-btn':           'Cancelar',
       'nav-logout':           'Cerrar sesión',
       'unblock-btn':          'Desbloquear',

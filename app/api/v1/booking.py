@@ -81,16 +81,9 @@ def submit_booking(
     if appointment_service.has_appointment_in_booking_window(db, customer.id):
         return RedirectResponse(url="/booking/?error=week_limit", status_code=303)
 
-    # Generate email verification token (always).
+    # Generate email verification token.
     email_token = token_utils.generate_token()
     email_token_hash = token_utils.hash_token(email_token)
-
-    # Generate cancel token only when the appointment is far enough in the future.
-    cancel_token = None
-    cancel_token_hash = None
-    if appointment_service.is_cancellable(slot_dt):
-        cancel_token = token_utils.generate_token()
-        cancel_token_hash = token_utils.hash_token(cancel_token)
 
     appointment = appointment_service.create_hold(
         db=db,
@@ -98,13 +91,11 @@ def submit_booking(
         start_time=slot_dt,
         notes=notes or None,
         email_token_hash=email_token_hash,
-        cancel_token_hash=cancel_token_hash,
     )
 
-    # Build one-time URLs; base_url includes scheme + host from the incoming request.
+    # Build confirm URL; base_url includes scheme + host from the incoming request.
     base_url = str(request.base_url).rstrip("/")
     confirm_url = f"{base_url}/booking/confirm?token={email_token}"
-    cancel_url = f"{base_url}/booking/cancel?token={cancel_token}" if cancel_token else None
 
     try:
         notification_service.send_booking_verification_email(
@@ -112,7 +103,6 @@ def submit_booking(
             customer_name=customer.full_name,
             start_time=appointment.start_time,
             confirm_url=confirm_url,
-            cancel_url=cancel_url,
         )
     except Exception:
         logger.exception(
@@ -148,10 +138,11 @@ def confirm_booking(request: Request, token: str, db: Session = Depends(get_db))
     appointment_service.expire_old_holds(db)
 
     token_hash = token_utils.hash_token(token)
-    appointment, reason = appointment_service.confirm_appointment_by_token(db, token_hash)
+    appointment, reason, raw_cancel_token = appointment_service.confirm_appointment_by_token(
+        db, token_hash
+    )
 
     if reason != "ok":
-        # Load appointment for display even on error, if available.
         return templates.TemplateResponse(
             "booking_confirmed.html",
             {"request": request, "appointment": None, "error": reason},
@@ -165,6 +156,26 @@ def confirm_booking(request: Request, token: str, db: Session = Depends(get_db))
         .filter(ApptModel.id == appointment.id)
         .first()
     )
+
+    # Send confirmation email with cancel link (if the slot is still cancellable).
+    base_url = str(request.base_url).rstrip("/")
+    cancel_url = (
+        f"{base_url}/booking/cancel?token={raw_cancel_token}"
+        if raw_cancel_token
+        else None
+    )
+    try:
+        notification_service.send_booking_confirmation_email(
+            to_email=appointment.customer.email,
+            customer_name=appointment.customer.full_name,
+            start_time=appointment.start_time,
+            cancel_url=cancel_url,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send confirmation email for appointment %d", appointment.id
+        )
+
     return templates.TemplateResponse(
         "booking_confirmed.html",
         {"request": request, "appointment": appointment, "error": None},

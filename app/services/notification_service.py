@@ -263,11 +263,19 @@ def _base_html(title: str, subtitle: str, customer_name: str, date_str: str, tim
 </html>"""
 
 
-def _confirmation_html(customer_name: str, date_str: str, time_str: str) -> str:
-    message = (
-        f"Si necesitas cancelar tu cita, hazlo con al menos "
-        f"<strong>{settings.cancellation_window_hours} hora(s)</strong> de anticipaci&oacute;n."
-    )
+def _confirmation_html(
+    customer_name: str, date_str: str, time_str: str, cancel_url: str | None = None
+) -> str:
+    if cancel_url:
+        message = (
+            f"Si necesitas cancelar tu cita, puedes hacerlo hasta "
+            f"<strong>{settings.cancellation_window_hours} hora(s)</strong> antes de la hora programada "
+            f'haciendo clic <a href="{cancel_url}" style="color:#374151;">aqu&iacute;</a>.'
+        )
+    else:
+        message = (
+            "Para cancelar o modificar tu cita, por favor cont&aacute;ctanos directamente."
+        )
     return _base_html(
         title="Cita Confirmada",
         subtitle="Tu reserva ha sido registrada con &eacute;xito.",
@@ -298,17 +306,9 @@ def _verification_html(
     date_str: str,
     time_str: str,
     confirm_url: str,
-    cancel_url: str | None,
 ) -> str:
     """HTML email asking the customer to click the confirm link to finalise their hold."""
     cancel_block = ""
-    if cancel_url:
-        cancel_block = (
-            f'<p style="margin:16px 0 0 0; font-size:13px; color:#9ca3af;">'
-            f'¿Cambiaste de opinión? '
-            f'<a href="{cancel_url}" style="color:#6b7280; text-decoration:underline;">'
-            f'Cancelar esta reserva</a></p>'
-        )
 
     expiry_note = (
         f'<p style="margin:24px 0 0 0; font-size:12px; color:#9ca3af; line-height:1.5;">'
@@ -440,20 +440,25 @@ def send_booking_confirmation_email(
     to_email: str,
     customer_name: str,
     start_time: datetime,
+    cancel_url: str | None = None,
 ) -> None:
-    """Send an appointment confirmation email to the customer."""
+    """Send an appointment confirmation email to the customer, optionally including a cancel link."""
     date_str = _format_date_es(start_time)
     time_str = _format_time(start_time)
 
     subject = f"Cita confirmada — {date_str} a las {time_str}"
 
+    cancel_line = (
+        f"\nPara cancelar tu cita: {cancel_url}\n"
+        if cancel_url
+        else ""
+    )
     text_body = (
         f"Hola {customer_name},\n\n"
         f"Tu cita ha sido confirmada. Aquí están los detalles:\n\n"
         f"  Fecha:  {date_str}\n"
-        f"  Hora:   {time_str}\n\n"
-        f"Si necesitas cancelar, hazlo con al menos "
-        f"{settings.cancellation_window_hours} hora(s) de anticipación.\n\n"
+        f"  Hora:   {time_str}\n"
+        f"{cancel_line}\n"
         f"Gracias por tu preferencia,\n"
         f"Bailey Barbershop"
     )
@@ -462,7 +467,7 @@ def send_booking_confirmation_email(
         to_email=to_email,
         subject=subject,
         text_body=text_body,
-        html_body=_confirmation_html(customer_name, date_str, time_str),
+        html_body=_confirmation_html(customer_name, date_str, time_str, cancel_url),
     )
 
 
@@ -498,29 +503,21 @@ def send_booking_verification_email(
     customer_name: str,
     start_time: datetime,
     confirm_url: str,
-    cancel_url: str | None,
 ) -> None:
     """
     Send the email-verification / hold-confirmation email.
     The customer must click confirm_url to finalise their booking.
-    cancel_url is included when the appointment is still within the cancellation window.
+    No cancel link is included at this stage — it is sent after the booking is confirmed.
     """
     date_str = _format_date_es(start_time)
     time_str = _format_time(start_time)
 
     subject = f"Confirma tu cita — {date_str} a las {time_str}"
 
-    cancel_line = (
-        f"\nSi deseas cancelar: {cancel_url}\n"
-        if cancel_url
-        else ""
-    )
-
     text_body = (
         f"Hola {customer_name},\n\n"
         f"Tu reserva está pendiente de confirmación. Haz clic en el enlace para confirmarla:\n\n"
-        f"  {confirm_url}\n"
-        f"{cancel_line}\n"
+        f"  {confirm_url}\n\n"
         f"Este enlace expira en {settings.hold_minutes} minutos.\n\n"
         f"Gracias por tu preferencia,\n"
         f"Bailey Barbershop"
@@ -530,5 +527,5 @@ def send_booking_verification_email(
         to_email=to_email,
         subject=subject,
         text_body=text_body,
-        html_body=_verification_html(customer_name, date_str, time_str, confirm_url, cancel_url),
+        html_body=_verification_html(customer_name, date_str, time_str, confirm_url),
     )

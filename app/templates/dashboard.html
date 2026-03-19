@@ -119,6 +119,10 @@
             <td>
               {% if appt.status == "confirmed" %}
                 <span class="badge-confirmed" data-i18n="badge-confirmed">Confirmed</span>
+              {% elif appt.status == "hold" %}
+                <span class="badge-hold" data-i18n="badge-hold">Pending</span>
+              {% elif appt.status == "expired" %}
+                <span class="badge-expired" data-i18n="badge-expired">Expired</span>
               {% else %}
                 <span class="badge-cancelled" data-i18n="badge-cancelled">Cancelled</span>
               {% endif %}

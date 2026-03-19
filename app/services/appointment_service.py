@@ -4,6 +4,7 @@ from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.config import settings
+from app.core import tokens as token_utils
 from app.models.appointment import (
     STATUS_CANCELLED,
     STATUS_CONFIRMED,
@@ -227,21 +228,15 @@ def create_hold(
     start_time: datetime,
     notes: str | None,
     email_token_hash: str,
-    cancel_token_hash: str | None,
 ) -> Appointment:
     """
     Create an unconfirmed appointment hold.
 
     The slot is reserved for hold_minutes while the customer verifies their email.
-    cancel_token_hash may be None when the appointment is too close to allow cancellation.
+    No cancel token is generated here — it is created only when the hold is confirmed.
     """
     now = _local_now()
     expiry = now + timedelta(minutes=settings.hold_minutes)
-    cancel_expiry = (
-        start_time - timedelta(hours=settings.cancellation_window_hours)
-        if cancel_token_hash
-        else None
-    )
 
     appointment = Appointment(
         customer_id=customer_id,
@@ -251,8 +246,6 @@ def create_hold(
         hold_expires_at=expiry,
         email_verification_token_hash=email_token_hash,
         email_verification_expires_at=expiry,
-        cancel_token_hash=cancel_token_hash,
-        cancel_token_expires_at=cancel_expiry,
     )
     db.add(appointment)
     db.commit()
@@ -262,11 +255,11 @@ def create_hold(
 
 def confirm_appointment_by_token(
     db: Session, token_hash: str
-) -> tuple[Appointment | None, str]:
+) -> tuple[Appointment | None, str, str | None]:
     """
     Confirm a hold via its email verification token.
-    Returns (appointment, reason) where reason is:
-      "ok"           — confirmed successfully
+    Returns (appointment, reason, raw_cancel_token) where reason is:
+      "ok"           — confirmed successfully; raw_cancel_token is set if cancellable
       "not_found"    — no appointment with this token hash
       "wrong_status" — appointment is not in hold status (already confirmed, cancelled, etc.)
       "expired"      — hold or verification window has passed
@@ -277,10 +270,10 @@ def confirm_appointment_by_token(
         .first()
     )
     if appointment is None:
-        return None, "not_found"
+        return None, "not_found", None
 
     if appointment.status != STATUS_HOLD:
-        return appointment, "wrong_status"
+        return appointment, "wrong_status", None
 
     now = _local_now()
     if (
@@ -289,7 +282,7 @@ def confirm_appointment_by_token(
         or now > appointment.hold_expires_at
         or now > appointment.email_verification_expires_at
     ):
-        return appointment, "expired"
+        return appointment, "expired", None
 
     now = _local_now()
     appointment.status = STATUS_CONFIRMED
@@ -298,9 +291,19 @@ def confirm_appointment_by_token(
     appointment.hold_expires_at = None
     appointment.email_verification_token_hash = None
     appointment.email_verification_expires_at = None
+
+    # Generate cancel token now that the booking is confirmed.
+    raw_cancel_token = None
+    if is_cancellable(appointment.start_time):
+        raw_cancel_token = token_utils.generate_token()
+        appointment.cancel_token_hash = token_utils.hash_token(raw_cancel_token)
+        appointment.cancel_token_expires_at = (
+            appointment.start_time - timedelta(hours=settings.cancellation_window_hours)
+        )
+
     db.commit()
     db.refresh(appointment)
-    return appointment, "ok"
+    return appointment, "ok", raw_cancel_token
 
 
 def cancel_appointment_by_token(
