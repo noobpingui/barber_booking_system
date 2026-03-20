@@ -47,6 +47,7 @@ def dashboard(
     if target_date is None:
         target_date = date.today()
 
+    appointment_service.expire_old_holds(db)
     appointments = appointment_service.get_appointments_by_date(db, target_date)
     blocked_slots = appointment_service.get_blocked_slots_by_date(db, target_date)
 

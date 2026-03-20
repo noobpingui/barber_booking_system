@@ -195,6 +195,19 @@ def cancel_booking(request: Request, token: str, db: Session = Depends(get_db)):
             status_code=400,
         )
 
+    customer = customer_service.get_customer_by_id(db, appointment.customer_id)
+    if customer:
+        try:
+            notification_service.send_booking_cancellation_email(
+                to_email=customer.email,
+                customer_name=customer.full_name,
+                start_time=appointment.start_time,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to send cancellation email for appointment %d", appointment.id
+            )
+
     return templates.TemplateResponse(
         "booking_cancelled.html",
         {"request": request, "appointment": appointment, "error": None},
