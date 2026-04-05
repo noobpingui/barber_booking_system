@@ -3,104 +3,229 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — Barber Dashboard</title>
+  <title>Login — Bailey BarberShop</title>
+
+  <!-- Google Fonts: Playfair Display -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap 5.3.3 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Bootstrap Icons 1.11.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
   <style>
+    /* ── Vintage Palette ─────────────────────────────────────────────── */
+    :root {
+      --bb-cream:      #f4ede0;
+      --bb-parchment:  #fdf8f0;
+      --bb-dark:       #1c0f07;
+      --bb-brown:      #3b1f0f;
+      --bb-red:        #8b1a1a;
+      --bb-gold:       #b8892a;
+      --bb-gold-light: #d4a843;
+      --bb-warm-text:  #3d2d1f;
+      --bb-muted:      #7a6556;
+      --bb-border:     #d4bfa8;
+    }
+
+    /* ── Base ────────────────────────────────────────────────────────── */
     body {
-      background-color: #121416;
+      background-color: var(--bb-cream);
+      background-image: repeating-linear-gradient(
+        135deg,
+        transparent 0px, transparent 40px,
+        rgba(184,137,42,.035) 40px, rgba(184,137,42,.035) 42px
+      );
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       font-family: system-ui, -apple-system, sans-serif;
+      color: var(--bb-warm-text);
     }
+
+    /* ── Login card ──────────────────────────────────────────────────── */
     .login-card {
-      background: #1e2125;
-      border: 1px solid #2d3035;
+      background: var(--bb-parchment);
+      border: 1px solid var(--bb-border);
+      border-top: 4px solid var(--bb-gold);
       border-radius: 12px;
-      padding: 2.5rem 2rem;
+      padding: 2.5rem 2rem 2rem;
       width: 100%;
-      max-width: 380px;
+      max-width: 400px;
+      box-shadow: 0 4px 24px rgba(28,15,7,.10);
     }
-    .login-brand {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: #fff;
+
+    /* ── Branding ────────────────────────────────────────────────────── */
+    .login-brand-icon {
+      font-size: 2rem;
+      color: var(--bb-gold);
+      display: block;
       text-align: center;
-      margin-bottom: 2rem;
+      line-height: 1;
+      margin-bottom: 0.4rem;
     }
-    .form-label {
-      color: #adb5bd;
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-    .form-control {
-      background: #2d3035;
-      border-color: #3d4045;
-      color: #fff;
-    }
-    .form-control:focus {
-      background: #2d3035;
-      border-color: #6c757d;
-      color: #fff;
-      box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25);
-    }
-    .form-control::placeholder { color: #6c757d; }
-    .btn-login {
-      background: #fff;
-      color: #111;
+    .login-brand-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.45rem;
       font-weight: 700;
-      border: none;
-      width: 100%;
-      padding: 0.6rem;
-      border-radius: 6px;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.15s;
+      color: var(--bb-dark);
+      text-align: center;
+      letter-spacing: 0.02em;
+      margin-bottom: 0;
     }
-    .btn-login:hover { background: #e9ecef; }
+    .login-ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      margin: 0.55rem 0 1.6rem;
+    }
+    .login-ornament::before,
+    .login-ornament::after {
+      content: '';
+      display: block;
+      width: 40px;
+      height: 1px;
+      background: var(--bb-gold);
+      opacity: 0.5;
+    }
+    .login-ornament span {
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--bb-muted);
+    }
+
+    /* ── Alert banner ────────────────────────────────────────────────── */
+    .bb-alert {
+      border-radius: 8px;
+      padding: 0.75rem 0.9rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      font-size: 0.87rem;
+      border-left: 4px solid;
+    }
+    .bb-alert-danger { background: #fdf0f0; border-left-color: var(--bb-red); color: #6b1414; }
+    .bb-alert-icon   { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+    /* ── Form controls ───────────────────────────────────────────────── */
+    .field-wrap {
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .field-wrap .field-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      color: var(--bb-gold);
+      font-size: 0.95rem;
+      pointer-events: none;
+    }
+    .form-floating > .form-control {
+      border-color: var(--bb-border);
+      background: #fff;
+      color: var(--bb-warm-text);
+      border-radius: 10px;
+      padding-left: 2.7rem;
+    }
+    .form-floating > .form-control:focus {
+      border-color: var(--bb-gold);
+      box-shadow: 0 0 0 3px rgba(184,137,42,.15);
+      background: #fff;
+    }
+    .form-floating > .form-control::placeholder { color: transparent; }
+    .form-floating > label {
+      color: var(--bb-muted);
+      padding-left: 2.7rem;
+    }
+
+    /* ── Submit button ───────────────────────────────────────────────── */
+    .btn-login {
+      background: var(--bb-brown);
+      border: 2px solid var(--bb-brown);
+      color: var(--bb-gold-light);
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.05rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      width: 100%;
+      padding: 0.7rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 0.5rem;
+    }
+    .btn-login:hover {
+      background: var(--bb-dark);
+      border-color: var(--bb-dark);
+      color: var(--bb-gold);
+    }
+
+    /* ── Footer note ─────────────────────────────────────────────────── */
+    .login-footer {
+      margin-top: 1.5rem;
+      font-size: 0.68rem;
+      color: var(--bb-muted);
+      text-align: center;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
   </style>
 </head>
 <body>
 
   <div class="login-card">
 
-    <div class="login-brand">✂ Barber Dashboard</div>
+    <!-- Branding -->
+    <span class="login-brand-icon">✂</span>
+    <div class="login-brand-name">Bailey BarberShop</div>
+    <div class="login-ornament"><span>Acceso a Calendario</span></div>
 
+    <!-- Error banner -->
     {% if error == "invalid_credentials" %}
-    <div class="alert alert-danger py-2 mb-3" style="font-size:0.875rem;" role="alert" data-i18n="error-login">
-      Invalid email or password.
+    <div class="bb-alert bb-alert-danger" role="alert">
+      <i class="bi bi-x-circle-fill bb-alert-icon"></i>
+      <span data-i18n="error-login">Correo o contraseña incorrectos.</span>
     </div>
     {% endif %}
 
+    <!-- Login form -->
     <form method="post" action="/auth/login">
-      <div class="mb-3">
-        <label for="email" class="form-label" data-i18n="label-email">Email</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          class="form-control"
-          autocomplete="email"
-          required
-        />
+
+      <div class="field-wrap">
+        <i class="bi bi-envelope field-icon"></i>
+        <div class="form-floating">
+          <input type="email" class="form-control" id="email" name="email"
+                 placeholder="Email" autocomplete="email" required />
+          <label for="email" data-i18n="label-email">Correo Electrónico</label>
+        </div>
       </div>
-      <div class="mb-4">
-        <label for="password" class="form-label" data-i18n="label-password">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          class="form-control"
-          autocomplete="current-password"
-          required
-        />
+
+      <div class="field-wrap">
+        <i class="bi bi-lock field-icon"></i>
+        <div class="form-floating">
+          <input type="password" class="form-control" id="password" name="password"
+                 placeholder="Password" autocomplete="current-password" required />
+          <label for="password" data-i18n="label-password">Contraseña</label>
+        </div>
       </div>
-      <button type="submit" class="btn-login" data-i18n="btn-login">Sign in</button>
+
+      <button type="submit" class="btn-login" data-i18n="btn-login">Iniciar sesión</button>
+
     </form>
 
   </div>
+
+  <div class="login-footer">Bailey BarberShop · Acceso solo para administrador</div>
 
 <script>
   const I18N_ES = {

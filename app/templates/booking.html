@@ -34,15 +34,15 @@
 <div class="stepper">
   <div class="stepper-item s-active" id="step-item-1">
     <div class="step-circle">1</div>
-    <div class="step-lbl">Date</div>
+    <div class="step-lbl">FECHA</div>
   </div>
   <div class="stepper-item" id="step-item-2">
     <div class="step-circle">2</div>
-    <div class="step-lbl">Time</div>
+    <div class="step-lbl">HORARIO</div>
   </div>
   <div class="stepper-item" id="step-item-3">
     <div class="step-circle">3</div>
-    <div class="step-lbl">Details</div>
+    <div class="step-lbl">DETALLES</div>
   </div>
 </div>
 
@@ -221,7 +221,7 @@
 (function () {
   var dp    = document.getElementById('date-picker');
   var strip = document.getElementById('week-strip');
-  var DAY   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var DAY   = ['dom','lun','mar','mie','jue','vie','sab'];
 
   function toISO(dt) {
     return dt.getFullYear() + '-'
