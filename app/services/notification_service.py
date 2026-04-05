@@ -459,6 +459,7 @@ def send_booking_confirmation_email(
         f"  Fecha:  {date_str}\n"
         f"  Hora:   {time_str}\n"
         f"{cancel_line}\n"
+        f"Recuerda estar 10 minutos antes para evitar retrasos con los barberos y los demas clientes,\n"
         f"Gracias por tu preferencia,\n"
         f"Bailey Barbershop"
     )
