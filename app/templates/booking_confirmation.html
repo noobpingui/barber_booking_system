@@ -1,12 +1,12 @@
 {% extends "booking_base.html" %}
-{% block title %}Confirma tu cita{% endblock %}
+{% block title %}Check Your Email — Bailey BarberShop{% endblock %}
 
 {% block content %}
 
 <div class="section-card text-center py-5">
-  <div class="confirm-icon mb-3">📧</div>
-  <h2 class="fw-bold mb-2" data-i18n="pending-heading">Check your email</h2>
-  <p class="text-secondary mb-4" data-i18n="pending-sub">
+  <div class="confirm-icon mb-3"><i class="bi bi-envelope-check"></i></div>
+  <h2 class="fw-bold mb-2" style="font-family:'Playfair Display',Georgia,serif;" data-i18n="pending-heading">Check your email</h2>
+  <p class="mb-4" style="color:var(--bb-muted);" data-i18n="pending-sub">
     We sent a confirmation link to your inbox. Click it to finalise your booking.
   </p>
 
@@ -14,22 +14,23 @@
     <table class="table table-borderless mb-0 confirm-detail">
       <tbody>
         <tr>
-          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-email-sent">Email</td>
+          <td class="fw-semibold pe-4" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bb-muted);" data-i18n="label-email-sent">Email</td>
           <td class="fw-bold">{{ appointment.customer.email }}</td>
         </tr>
         <tr>
-          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-date">Date</td>
+          <td class="fw-semibold pe-4" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bb-muted);" data-i18n="label-date">Date</td>
           <td class="fw-bold">{{ appointment.start_time.strftime("%A, %d %B %Y") }}</td>
         </tr>
         <tr>
-          <td class="fw-semibold pe-4 text-secondary" style="font-size:0.85rem; text-transform:uppercase; letter-spacing:.05em;" data-i18n="label-time">Time</td>
+          <td class="fw-semibold pe-4" style="font-size:0.8rem;text-transform:uppercase;letter-spacing:.06em;color:var(--bb-muted);" data-i18n="label-time">Time</td>
           <td class="fw-bold">{{ appointment.start_time.strftime("%H:%M") }}</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <div class="alert alert-warning d-inline-block px-4 py-2" style="font-size:0.88rem; border-radius:8px;">
+  <div class="bb-alert bb-alert-warn d-inline-flex" style="font-size:0.85rem; border-radius:8px;">
+    <i class="bi bi-hourglass-split bb-alert-icon"></i>
     <span data-i18n="pending-expiry">The link expires in 10 minutes. If it expires, simply book again.</span>
   </div>
 </div>

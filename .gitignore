@@ -22,6 +22,7 @@ env/
 # Claude local instructions — machine-specific, not for version control
 CLAUDE.local.md
 CLAUDE.local.md.txt
+.claude*
 
 # SQLite database files
 *.db

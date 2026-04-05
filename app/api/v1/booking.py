@@ -24,9 +24,9 @@ templates = Jinja2Templates(directory="app/templates")
 def booking_page(request: Request, error: str | None = None):
     today, max_date = appointment_service.get_booking_window()
     return templates.TemplateResponse(
-        "booking.html",
-        {
-            "request": request,
+        request=request,
+        name="booking.html",
+        context={
             "error": error,
             "today_str": today.isoformat(),
             "max_date_str": max_date.isoformat(),
@@ -127,8 +127,9 @@ def booking_confirmation(request: Request, id: int, db: Session = Depends(get_db
         return RedirectResponse(url="/booking/", status_code=303)
 
     return templates.TemplateResponse(
-        "booking_confirmation.html",
-        {"request": request, "appointment": appointment},
+        request=request,
+        name="booking_confirmation.html",
+        context={"appointment": appointment},
     )
 
 
@@ -144,8 +145,9 @@ def confirm_booking(request: Request, token: str, db: Session = Depends(get_db))
 
     if reason != "ok":
         return templates.TemplateResponse(
-            "booking_confirmed.html",
-            {"request": request, "appointment": None, "error": reason},
+            request=request,
+            name="booking_confirmed.html",
+            context={"appointment": None, "error": reason},
             status_code=400,
         )
 
@@ -177,8 +179,9 @@ def confirm_booking(request: Request, token: str, db: Session = Depends(get_db))
         )
 
     return templates.TemplateResponse(
-        "booking_confirmed.html",
-        {"request": request, "appointment": appointment, "error": None},
+        request=request,
+        name="booking_confirmed.html",
+        context={"appointment": appointment, "error": None},
     )
 
 
@@ -190,8 +193,9 @@ def cancel_booking(request: Request, token: str, db: Session = Depends(get_db)):
 
     if reason != "ok":
         return templates.TemplateResponse(
-            "booking_cancelled.html",
-            {"request": request, "appointment": None, "error": reason},
+            request=request,
+            name="booking_cancelled.html",
+            context={"appointment": None, "error": reason},
             status_code=400,
         )
 
@@ -209,6 +213,7 @@ def cancel_booking(request: Request, token: str, db: Session = Depends(get_db)):
             )
 
     return templates.TemplateResponse(
-        "booking_cancelled.html",
-        {"request": request, "appointment": appointment, "error": None},
+        request=request,
+        name="booking_cancelled.html",
+        context={"appointment": appointment, "error": None},
     )

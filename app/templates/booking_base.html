@@ -3,97 +3,439 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Book an Appointment{% endblock %}</title>
+  <title>{% block title %}Bailey BarberShop — Book an Appointment{% endblock %}</title>
+
+  <!-- Google Fonts: Playfair Display for vintage serif headings -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap 5.3.3 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Bootstrap Icons 1.11.3 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
   <script>window.getLang = () => localStorage.getItem('lang') || 'en';</script>
+
   <style>
+    /* ── Vintage Palette ─────────────────────────────────────────────── */
+    :root {
+      --bb-cream:      #f4ede0;
+      --bb-parchment:  #fdf8f0;
+      --bb-dark:       #1c0f07;
+      --bb-brown:      #3b1f0f;
+      --bb-red:        #8b1a1a;
+      --bb-gold:       #b8892a;
+      --bb-gold-light: #d4a843;
+      --bb-warm-text:  #3d2d1f;
+      --bb-muted:      #7a6556;
+      --bb-border:     #d4bfa8;
+    }
+
+    /* ── Base ────────────────────────────────────────────────────────── */
     body {
-      background-color: #f0f2f5;
+      background-color: var(--bb-cream);
+      background-image: repeating-linear-gradient(
+        135deg,
+        transparent 0px, transparent 40px,
+        rgba(184,137,42,.035) 40px, rgba(184,137,42,.035) 42px
+      );
       font-family: system-ui, -apple-system, sans-serif;
+      color: var(--bb-warm-text);
     }
+
+    /* ── Navbar ──────────────────────────────────────────────────────── */
     .navbar {
-      border-bottom: 3px solid #111;
+      background: var(--bb-dark) !important;
+      border-bottom: 4px solid var(--bb-gold);
+      padding-top: 0.8rem;
+      padding-bottom: 0.8rem;
     }
-    .navbar-brand {
-      font-size: 1.2rem;
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .brand-scissor {
+      font-size: 1.6rem;
+      color: var(--bb-gold);
+      line-height: 1;
+    }
+    .brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.15;
+    }
+    .brand-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.1rem;
       font-weight: 700;
-      letter-spacing: 0.04em;
+      color: #fff;
+      letter-spacing: 0.02em;
     }
-
-    /* Slot grid */
-    .slot-btn {
-      width: 90px;
-      border: 2px solid #dee2e6;
-      background: #fff;
-      border-radius: 8px;
-      padding: 10px 0;
-      font-weight: 600;
-      font-size: 0.95rem;
+    .brand-tagline {
+      font-size: 0.6rem;
+      color: var(--bb-gold-light);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+    .lang-btn {
+      background: none;
+      border: 1px solid rgba(184,137,42,.55);
+      border-radius: 20px;
+      padding: 4px 12px;
       cursor: pointer;
+      font-size: 1rem;
+      color: var(--bb-gold-light);
       transition: all 0.15s;
-      color: #212529;
     }
-    .slot-btn:hover {
-      border-color: #212529;
-      background: #212529;
-      color: #fff;
-    }
-    .slot-btn.selected {
-      border-color: #0d6efd;
-      background: #0d6efd;
-      color: #fff;
-    }
-    .slot-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    .lang-btn:hover {
+      background: rgba(184,137,42,.18);
+      border-color: var(--bb-gold);
     }
 
-    /* Section cards */
+    /* ── Hero Strip ──────────────────────────────────────────────────── */
+    .booking-hero {
+      background: var(--bb-brown);
+      text-align: center;
+      padding: 1.35rem 1rem 1.15rem;
+      border-bottom: 2px solid var(--bb-gold);
+      margin-bottom: 2rem;
+    }
+    .booking-hero-name {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+      margin-bottom: 0.1rem;
+    }
+    .booking-hero-ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      color: var(--bb-gold);
+      margin: 0.35rem 0;
+    }
+    .booking-hero-ornament::before,
+    .booking-hero-ornament::after {
+      content: '';
+      display: block;
+      width: 48px;
+      height: 1px;
+      background: var(--bb-gold);
+      opacity: 0.5;
+    }
+    .booking-hero-ornament span {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--bb-gold-light);
+    }
+    .booking-hero-sub {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,.45);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* ── Stepper ─────────────────────────────────────────────────────── */
+    .stepper {
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      margin-bottom: 1.75rem;
+    }
+    .stepper-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      position: relative;
+    }
+    .stepper-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      width: 100%;
+      height: 2px;
+      background: var(--bb-border);
+      z-index: 0;
+    }
+    .stepper-item.s-done:not(:last-child)::after { background: var(--bb-gold); }
+    .step-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid var(--bb-border);
+      background: var(--bb-parchment);
+      color: var(--bb-muted);
+      font-weight: 700;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      transition: all 0.25s;
+    }
+    .stepper-item.s-active .step-circle {
+      border-color: var(--bb-gold);
+      background: var(--bb-gold);
+      color: #fff;
+    }
+    .stepper-item.s-done .step-circle {
+      border-color: var(--bb-brown);
+      background: var(--bb-brown);
+      color: var(--bb-gold-light);
+    }
+    .step-lbl {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--bb-muted);
+      margin-top: 0.4rem;
+      text-align: center;
+    }
+    .stepper-item.s-active .step-lbl { color: var(--bb-brown); font-weight: 700; }
+    .stepper-item.s-done  .step-lbl { color: var(--bb-gold); }
+
+    /* ── Section Cards ───────────────────────────────────────────────── */
     .section-card {
-      background: #fff;
-      border-radius: 10px;
+      background: var(--bb-parchment);
+      border: 1px solid var(--bb-border);
+      border-radius: 12px;
       padding: 1.5rem;
-      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      box-shadow: 0 2px 10px rgba(28,15,7,.07);
       margin-bottom: 1.25rem;
     }
     .section-title {
-      font-size: 0.75rem;
+      font-size: 0.68rem;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.1em;
       font-weight: 700;
-      color: #6c757d;
+      color: var(--bb-gold);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .section-title i { font-size: 0.88rem; }
+
+    /* ── Week Strip ──────────────────────────────────────────────────── */
+    #week-strip {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding-bottom: 3px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    #week-strip::-webkit-scrollbar { display: none; }
+    .day-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 54px;
+      padding: 0.55rem 0.4rem;
+      border: 2px solid var(--bb-border);
+      border-radius: 10px;
+      background: #fff;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .day-pill:hover {
+      border-color: var(--bb-gold);
+      background: rgba(184,137,42,.07);
+    }
+    .day-pill.dp-active {
+      border-color: var(--bb-brown);
+      background: var(--bb-brown);
+    }
+    .day-pill .dp-name {
+      font-size: 0.63rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      color: var(--bb-muted);
+    }
+    .day-pill.dp-active .dp-name { color: var(--bb-gold-light); }
+    .day-pill .dp-num {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--bb-warm-text);
+      line-height: 1.2;
+    }
+    .day-pill.dp-active .dp-num { color: #fff; }
+
+    /* ── Slot Buttons ────────────────────────────────────────────────── */
+    .slot-btn {
+      width: 90px;
+      border: 2px solid var(--bb-border);
+      background: #fff;
+      border-radius: 10px;
+      padding: 10px 0 8px;
+      font-weight: 600;
+      font-size: 0.92rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      color: var(--bb-warm-text);
+      animation: slotFadeIn 0.22s ease both;
+    }
+    @keyframes slotFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .slot-btn:hover {
+      border-color: var(--bb-gold);
+      background: rgba(184,137,42,.07);
+      color: var(--bb-brown);
+    }
+    .slot-btn.selected {
+      border-color: var(--bb-brown);
+      background: var(--bb-brown);
+      color: #fff;
+    }
+    .slot-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Form: Floating Labels + Icons ───────────────────────────────── */
+    .field-wrap {
+      position: relative;
       margin-bottom: 1rem;
     }
-
-    /* Confirmation */
-    .confirm-icon {
-      font-size: 3.5rem;
+    .field-wrap .field-icon {
+      position: absolute;
+      left: 13px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      color: var(--bb-gold);
+      font-size: 0.95rem;
+      pointer-events: none;
     }
-    .confirm-detail {
-      font-size: 1.1rem;
+    .form-floating > .form-control {
+      border-color: var(--bb-border);
+      background: #fff;
+      color: var(--bb-warm-text);
+      border-radius: 10px;
+      padding-left: 2.7rem;
+    }
+    .form-floating > .form-control:focus {
+      border-color: var(--bb-gold);
+      box-shadow: 0 0 0 3px rgba(184,137,42,.15);
+      background: #fff;
+    }
+    .form-floating > label {
+      color: var(--bb-muted);
+      padding-left: 2.7rem;
     }
 
-    /* Language toggle */
-    .lang-btn {
+    /* ── Submit Button ───────────────────────────────────────────────── */
+    #submit-btn {
+      background: var(--bb-brown);
+      border: 2px solid var(--bb-brown);
+      color: var(--bb-gold-light);
+      border-radius: 10px;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 1.05rem;
+      letter-spacing: 0.04em;
+      transition: all 0.2s;
+    }
+    #submit-btn:not([disabled]):hover {
+      background: var(--bb-dark);
+      border-color: var(--bb-dark);
+      color: var(--bb-gold);
+    }
+    #submit-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+    .form-submitting #submit-btn {
+      opacity: 0.65;
+      cursor: wait;
+      pointer-events: none;
+    }
+
+    /* ── Custom Alert Banners ────────────────────────────────────────── */
+    .bb-alert {
+      border-radius: 10px;
+      padding: 0.85rem 1rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      font-size: 0.88rem;
+      border-left: 4px solid;
+    }
+    .bb-alert-warn   { background: #fef9ec; border-left-color: var(--bb-gold);  color: #5c3d00; }
+    .bb-alert-danger { background: #fdf0f0; border-left-color: var(--bb-red);   color: #6b1414; }
+    .bb-alert-icon  { font-size: 1.05rem; flex-shrink: 0; margin-top: 1px; }
+    .bb-alert-body  { flex: 1; }
+    .bb-alert-close {
+      margin-left: auto;
       background: none;
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 2px 8px;
+      border: none;
       cursor: pointer;
-      font-size: 1.1rem;
-      line-height: 1.4;
-      color: #fff;
+      opacity: 0.45;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+      color: inherit;
+      font-size: 1.15rem;
+    }
+    .bb-alert-close:hover { opacity: 0.9; }
+
+    /* ── Confirmation / Cancellation Pages ───────────────────────────── */
+    .confirm-icon { font-size: 3.2rem; color: var(--bb-gold); }
+    .confirm-detail { font-size: 1rem; }
+    .confirm-detail td { padding: 0.35rem 0; }
+    .btn-outline-dark {
+      border-color: var(--bb-brown) !important;
+      color: var(--bb-brown) !important;
+      border-radius: 8px;
+    }
+    .btn-outline-dark:hover {
+      background: var(--bb-brown) !important;
+      color: var(--bb-gold-light) !important;
+    }
+
+    /* ── Misc ────────────────────────────────────────────────────────── */
+    #slots-loading, #slots-empty, #slots-prompt {
+      color: var(--bb-muted);
+      font-size: 0.88rem;
+    }
+    .alert-warning {
+      background: #fef9ec;
+      border-color: var(--bb-gold);
+      color: #5c3d00;
+      border-radius: 10px;
+      font-size: 0.88rem;
     }
   </style>
 </head>
 <body>
 
-  <nav class="navbar navbar-dark bg-dark mb-4 px-3">
+  <!-- ── Navbar ──────────────────────────────────────────────────────── -->
+  <nav class="navbar navbar-dark mb-0 px-3">
     <div class="container d-flex justify-content-between align-items-center">
-      <span class="navbar-brand mb-0" data-i18n="nav-brand">✂ Book an Appointment</span>
+      <div class="brand-wrap">
+        <span class="brand-scissor">✂</span>
+        <div class="brand-text">
+          <span class="brand-name">Bailey BarberShop</span>
+          <span class="brand-tagline">Premium Cuts · Est. 2020</span>
+        </div>
+      </div>
       <button class="lang-btn" id="lang-toggle" onclick="toggleLang()">🇨🇷</button>
     </div>
   </nav>
+
+  <!-- ── Hero Strip ──────────────────────────────────────────────────── -->
+  <div class="booking-hero">
+    <div class="booking-hero-name">Bailey BarberShop</div>
+    <div class="booking-hero-ornament"><span>Book Your Appointment</span></div>
+    <div class="booking-hero-sub">Fresh cuts · Sharp styles · Est. 2020</div>
+  </div>
 
   <div class="container pb-5" style="max-width: 640px;">
     {% block content %}{% endblock %}

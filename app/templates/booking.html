@@ -1,51 +1,86 @@
 {% extends "booking_base.html" %}
-{% block title %}Book an Appointment{% endblock %}
+{% block title %}Book an Appointment — Bailey BarberShop{% endblock %}
 
 {% block content %}
 
-<!-- ── Error banner ──────────────────────────────────────────────── -->
+<!-- ── Error Banners ───────────────────────────────────────────────── -->
 {% if error == "slot_taken" %}
-<div class="alert alert-warning" role="alert" data-i18n="error-slot-taken">
-  That slot was just taken. Please pick another time.
+<div class="bb-alert bb-alert-warn" role="alert">
+  <i class="bi bi-exclamation-circle-fill bb-alert-icon"></i>
+  <span class="bb-alert-body" data-i18n="error-slot-taken">That slot was just taken. Please pick another time.</span>
+  <button class="bb-alert-close" onclick="this.closest('.bb-alert').remove()" aria-label="Close">&times;</button>
 </div>
 {% elif error == "invalid_slot" %}
-<div class="alert alert-danger" role="alert" data-i18n="error-invalid-slot">
-  Invalid time slot. Please select a valid time and try again.
+<div class="bb-alert bb-alert-danger" role="alert">
+  <i class="bi bi-x-circle-fill bb-alert-icon"></i>
+  <span class="bb-alert-body" data-i18n="error-invalid-slot">Invalid time slot. Please select a valid time and try again.</span>
+  <button class="bb-alert-close" onclick="this.closest('.bb-alert').remove()" aria-label="Close">&times;</button>
 </div>
 {% elif error == "invalid_details" %}
-<div class="alert alert-danger" role="alert" data-i18n="error-invalid-details">
-  Please check your contact details and try again.
+<div class="bb-alert bb-alert-danger" role="alert">
+  <i class="bi bi-x-circle-fill bb-alert-icon"></i>
+  <span class="bb-alert-body" data-i18n="error-invalid-details">Please check your contact details and try again.</span>
+  <button class="bb-alert-close" onclick="this.closest('.bb-alert').remove()" aria-label="Close">&times;</button>
 </div>
 {% elif error == "week_limit" %}
-<div class="alert alert-warning" role="alert" data-i18n="error-week-limit">
-  You already have an appointment booked this week. Only one appointment per week is allowed.
+<div class="bb-alert bb-alert-warn" role="alert">
+  <i class="bi bi-calendar-x-fill bb-alert-icon"></i>
+  <span class="bb-alert-body" data-i18n="error-week-limit">You already have an appointment booked this week. Only one appointment per week is allowed.</span>
+  <button class="bb-alert-close" onclick="this.closest('.bb-alert').remove()" aria-label="Close">&times;</button>
 </div>
 {% endif %}
+
+<!-- ── Step Indicator ─────────────────────────────────────────────── -->
+<div class="stepper">
+  <div class="stepper-item s-active" id="step-item-1">
+    <div class="step-circle">1</div>
+    <div class="step-lbl">Date</div>
+  </div>
+  <div class="stepper-item" id="step-item-2">
+    <div class="step-circle">2</div>
+    <div class="step-lbl">Time</div>
+  </div>
+  <div class="stepper-item" id="step-item-3">
+    <div class="step-circle">3</div>
+    <div class="step-lbl">Details</div>
+  </div>
+</div>
 
 <form method="post" action="/booking/" id="booking-form">
 
   <!-- ── Step 1: Pick a date ──────────────────────────────────────── -->
   <div class="section-card">
-    <div class="section-title" data-i18n="step1-title">Step 1 — Choose a date</div>
+    <div class="section-title">
+      <i class="bi bi-calendar3"></i>
+      <span data-i18n="step1-title">Step 1 — Choose a date</span>
+    </div>
+
+    <!-- Visual week strip — JS renders day pills here -->
+    <div id="week-strip"></div>
+
+    <!-- Native date picker kept as source of truth; shown subtly for fallback -->
     <input
       type="date"
       id="date-picker"
-      class="form-control"
-      style="max-width: 220px;"
+      class="form-control mt-3"
+      style="max-width:175px; font-size:0.8rem; opacity:0.55; border-color:var(--bb-border); border-radius:8px;"
     />
   </div>
 
   <!-- ── Step 2: Pick a slot ─────────────────────────────────────── -->
   <div class="section-card">
-    <div class="section-title" data-i18n="step2-title">Step 2 — Choose a time</div>
+    <div class="section-title">
+      <i class="bi bi-clock"></i>
+      <span data-i18n="step2-title">Step 2 — Choose a time</span>
+    </div>
 
-    <div id="slots-loading" class="text-secondary" style="display:none; font-size:0.9rem;" data-i18n="slots-loading">
+    <div id="slots-loading" style="display:none;" data-i18n="slots-loading">
       Loading available times…
     </div>
-    <div id="slots-empty" class="text-secondary" style="display:none; font-size:0.9rem;" data-i18n="slots-empty">
+    <div id="slots-empty" style="display:none;" data-i18n="slots-empty">
       No available slots for this date. Try another day.
     </div>
-    <div id="slots-prompt" class="text-secondary" style="font-size:0.9rem;" data-i18n="slots-prompt">
+    <div id="slots-prompt" data-i18n="slots-prompt">
       Select a date above to see available times.
     </div>
 
@@ -57,33 +92,47 @@
 
   <!-- ── Step 3: Contact details ─────────────────────────────────── -->
   <div class="section-card">
-    <div class="section-title" data-i18n="step3-title">Step 3 — Your details</div>
-
-    <div class="mb-3">
-      <label for="full_name" class="form-label fw-semibold" data-i18n="label-name">Full name</label>
-      <input type="text" class="form-control" id="full_name" name="full_name"
-             placeholder="Alberto Fallas" required maxlength="100" />
+    <div class="section-title">
+      <i class="bi bi-person-lines-fill"></i>
+      <span data-i18n="step3-title">Step 3 — Your details</span>
     </div>
 
-    <div class="mb-3">
-      <label for="email" class="form-label fw-semibold" data-i18n="label-email">Email</label>
-      <input type="email" class="form-control" id="email" name="email"
-             placeholder="alberto_fallas@example.com" required maxlength="255" />
+    <div class="field-wrap">
+      <i class="bi bi-person field-icon"></i>
+      <div class="form-floating">
+        <input type="text" class="form-control" id="full_name" name="full_name"
+               placeholder="Full name" required maxlength="100" />
+        <label for="full_name" data-i18n="label-name">Full name</label>
+      </div>
     </div>
 
-    <div class="mb-3">
-      <label for="phone" class="form-label fw-semibold" data-i18n="label-phone">Phone</label>
-      <input type="tel" class="form-control" id="phone" name="phone"
-             placeholder="80901234" required minlength="8" maxlength="8" />
+    <div class="field-wrap">
+      <i class="bi bi-envelope field-icon"></i>
+      <div class="form-floating">
+        <input type="email" class="form-control" id="email" name="email"
+               placeholder="Email" required maxlength="255" />
+        <label for="email" data-i18n="label-email">Email</label>
+      </div>
     </div>
+
+    <div class="field-wrap">
+      <i class="bi bi-telephone field-icon"></i>
+      <div class="form-floating">
+        <input type="tel" class="form-control" id="phone" name="phone"
+               placeholder="Phone" required minlength="8" maxlength="8" />
+        <label for="phone" data-i18n="label-phone">Phone</label>
+      </div>
+    </div>
+  </div>
 
   <!-- ── Submit ──────────────────────────────────────────────────── -->
-  <button type="submit" class="btn btn-dark w-100 py-3 fw-bold" id="submit-btn" disabled data-i18n="submit-btn">
+  <button type="submit" class="btn w-100 py-3 fw-bold" id="submit-btn" disabled data-i18n="submit-btn">
     Book Appointment
   </button>
 
 </form>
 
+<!-- ── Original business-logic script — DO NOT MODIFY ────────────── -->
 <script>
   const datePicker    = document.getElementById('date-picker');
   const slotsGrid     = document.getElementById('slots-grid');
@@ -165,6 +214,88 @@
         : 'Please select a time slot before booking.');
     }
   });
+</script>
+
+<!-- ── Visual enhancements: week strip, stepper, loading state ───── -->
+<script>
+(function () {
+  var dp    = document.getElementById('date-picker');
+  var strip = document.getElementById('week-strip');
+  var DAY   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+  function toISO(dt) {
+    return dt.getFullYear() + '-'
+      + String(dt.getMonth() + 1).padStart(2, '0') + '-'
+      + String(dt.getDate()).padStart(2, '0');
+  }
+
+  function parseLocal(str) {
+    var p = str.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]);
+  }
+
+  function renderStrip(selectedStr) {
+    if (!strip || !dp.min || !dp.max) return;
+    strip.innerHTML = '';
+    var minDt = parseLocal(dp.min);
+    var maxDt = parseLocal(dp.max);
+    var cur   = new Date(minDt);
+    while (cur <= maxDt) {
+      var dateStr  = toISO(cur);
+      var pill     = document.createElement('button');
+      pill.type    = 'button';
+      pill.className = 'day-pill' + (dateStr === selectedStr ? ' dp-active' : '');
+      pill.innerHTML =
+        '<span class="dp-name">' + DAY[cur.getDay()] + '</span>' +
+        '<span class="dp-num">'  + cur.getDate()      + '</span>';
+      /* closure captures dateStr correctly via IIFE */
+      (function (ds) {
+        pill.addEventListener('click', function () {
+          dp.value = ds;
+          dp.dispatchEvent(new Event('change'));
+          renderStrip(ds);
+        });
+      })(dateStr);
+      strip.appendChild(pill);
+      cur.setDate(cur.getDate() + 1);
+    }
+  }
+
+  /* Run after the main script has set dp.min / max / value */
+  renderStrip(dp.value || dp.min);
+
+  /* Keep strip in sync if the native date picker is used directly */
+  dp.addEventListener('change', function () {
+    renderStrip(dp.value);
+  });
+
+  /* ── Stepper state ──────────────────────────────────────────────── */
+  function updateStepper() {
+    var hasSlot = !!document.getElementById('start-time-input').value;
+    document.getElementById('step-item-1').className = 'stepper-item s-done';
+    document.getElementById('step-item-2').className = 'stepper-item ' + (hasSlot ? 's-done' : 's-active');
+    document.getElementById('step-item-3').className = 'stepper-item ' + (hasSlot ? 's-active' : '');
+  }
+
+  /* Slot selected → update stepper */
+  document.getElementById('slots-grid').addEventListener('click', function (e) {
+    if (e.target.classList.contains('slot-btn') || e.target.closest('.slot-btn')) {
+      setTimeout(updateStepper, 0);
+    }
+  });
+
+  /* Date changed → slot deselected → reset stepper */
+  dp.addEventListener('change', function () {
+    setTimeout(updateStepper, 0);
+  });
+
+  /* ── Loading state on form submit ───────────────────────────────── */
+  document.getElementById('booking-form').addEventListener('submit', function () {
+    if (document.getElementById('start-time-input').value) {
+      this.classList.add('form-submitting');
+    }
+  });
+})();
 </script>
 
 {% endblock %}

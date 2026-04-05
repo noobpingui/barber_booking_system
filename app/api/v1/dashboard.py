@@ -55,9 +55,9 @@ def dashboard(
     cancelled = sum(1 for a in appointments if a.status == STATUS_CANCELLED)
 
     return templates.TemplateResponse(
-        "dashboard.html",
-        {
-            "request": request,
+        request=request,
+        name="dashboard.html",
+        context={
             "events": _build_events(appointments, blocked_slots),
             "target_date": target_date,
             "prev_date": target_date - timedelta(days=1),

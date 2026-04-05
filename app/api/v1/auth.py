@@ -17,7 +17,7 @@ _COOKIE_MAX_AGE = 60 * 60 * 8  # 8 hours
 
 @router.get("/login", response_class=HTMLResponse)
 def login_page(request: Request, error: str | None = None):
-    return templates.TemplateResponse("login.html", {"request": request, "error": error})
+    return templates.TemplateResponse(request=request, name="login.html", context={"error": error})
 
 
 @router.post("/auth/login")
