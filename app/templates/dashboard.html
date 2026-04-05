@@ -1,174 +1,176 @@
 {% extends "base.html" %}
 
-{% block title %}{{ target_date.strftime("%d %b %Y") }} — Barber Dashboard{% endblock %}
+{% block title %}{{ target_date.strftime("%d %b %Y") }} — Bailey BarberShop Dashboard{% endblock %}
 
 {% block content %}
 
-<!-- ── Date navigation ──────────────────────────────────────────── -->
+<!-- ── Date navigation ───────────────────────────────────────────── -->
 <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
 
-  <a href="/dashboard/?target_date={{ prev_date }}" class="date-nav-btn">&larr;</a>
+  <a href="/dashboard/?target_date={{ prev_date }}" class="date-nav-btn">
+    <i class="bi bi-chevron-left"></i>
+  </a>
 
-  <h1 class="date-heading mb-0 flex-grow-1 text-center">
+  <h1 class="date-heading mb-0 flex-grow-1">
     {{ target_date.strftime("%A, %d %B %Y") }}
   </h1>
 
-  <a href="/dashboard/?target_date={{ next_date }}" class="date-nav-btn">&rarr;</a>
+  <a href="/dashboard/?target_date={{ next_date }}" class="date-nav-btn">
+    <i class="bi bi-chevron-right"></i>
+  </a>
 
   <form method="get" action="/dashboard/" id="date-form">
     <input
       type="date"
       name="target_date"
       value="{{ target_date }}"
-      class="form-control form-control-sm"
-      style="width: 150px;"
+      class="date-picker-input"
       onchange="document.getElementById('date-form').submit()"
     />
   </form>
 
 </div>
 
-<!-- ── Error banner ──────────────────────────────────────────────── -->
+<!-- ── Error banners ─────────────────────────────────────────────── -->
 {% if block_error == "already_booked" %}
-<div class="alert alert-warning" role="alert" data-i18n="error-already-booked">
-  That slot already has a confirmed appointment and cannot be blocked.
+<div class="bb-alert bb-alert-warn" role="alert">
+  <i class="bi bi-exclamation-circle-fill bb-alert-icon"></i>
+  <span class="bb-alert-body" data-i18n="error-already-booked">That slot already has a confirmed appointment and cannot be blocked.</span>
+  <button class="bb-alert-close" onclick="this.closest('.bb-alert').remove()" aria-label="Close">&times;</button>
 </div>
 {% elif block_error == "invalid" %}
-<div class="alert alert-danger" role="alert" data-i18n="error-invalid">
-  Invalid slot time. Please select a valid time from the list.
+<div class="bb-alert bb-alert-danger" role="alert">
+  <i class="bi bi-x-circle-fill bb-alert-icon"></i>
+  <span class="bb-alert-body" data-i18n="error-invalid">Invalid slot time. Please select a valid time from the list.</span>
+  <button class="bb-alert-close" onclick="this.closest('.bb-alert').remove()" aria-label="Close">&times;</button>
 </div>
 {% endif %}
 
-<!-- ── Stat cards ───────────────────────────────────────────────── -->
+<!-- ── Stat cards ────────────────────────────────────────────────── -->
 <div class="row g-3 mb-4">
 
   <div class="col-4">
-    <div class="stat-card bg-white shadow-sm">
-      <div class="stat-label text-success" data-i18n="stat-confirmed">Confirmed</div>
-      <div class="stat-value text-success">{{ confirmed_count }}</div>
+    <div class="stat-card">
+      <span class="stat-icon stat-icon-confirmed"><i class="bi bi-check-circle-fill"></i></span>
+      <div class="stat-value">{{ confirmed_count }}</div>
+      <div class="stat-label" data-i18n="stat-confirmed">Confirmed</div>
     </div>
   </div>
 
   <div class="col-4">
-    <div class="stat-card bg-white shadow-sm">
-      <div class="stat-label text-secondary" data-i18n="stat-cancelled">Cancelled</div>
-      <div class="stat-value text-secondary">{{ cancelled_count }}</div>
+    <div class="stat-card">
+      <span class="stat-icon stat-icon-cancelled"><i class="bi bi-x-circle"></i></span>
+      <div class="stat-value">{{ cancelled_count }}</div>
+      <div class="stat-label" data-i18n="stat-cancelled">Cancelled</div>
     </div>
   </div>
 
   <div class="col-4">
-    <div class="stat-card bg-white shadow-sm">
-      <div class="stat-label" style="color:#fd7e14;" data-i18n="stat-blocked">Blocked</div>
-      <div class="stat-value" style="color:#fd7e14;">{{ blocked_count }}</div>
+    <div class="stat-card">
+      <span class="stat-icon stat-icon-blocked"><i class="bi bi-slash-circle"></i></span>
+      <div class="stat-value">{{ blocked_count }}</div>
+      <div class="stat-label" data-i18n="stat-blocked">Blocked</div>
     </div>
   </div>
 
 </div>
 
-<!-- ── Block a slot ─────────────────────────────────────────────── -->
-<div class="bg-white shadow-sm rounded p-3 mb-4 d-flex align-items-center gap-3 flex-wrap">
-  <span style="font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6c757d;" data-i18n="block-slot-label">
-    Block a slot
-  </span>
-  <form method="post" action="/dashboard/block" class="d-flex align-items-center gap-2">
+<!-- ── Block a slot ──────────────────────────────────────────────── -->
+<div class="section-card d-flex align-items-center gap-3 flex-wrap">
+  <div class="section-title">
+    <i class="bi bi-slash-circle"></i>
+    <span data-i18n="block-slot-label">Block a slot</span>
+  </div>
+  <form method="post" action="/dashboard/block" class="d-flex align-items-center gap-2 ms-auto flex-wrap">
     <input type="hidden" name="target_date" value="{{ target_date }}" />
-    <select name="slot_time" class="form-select form-select-sm" style="width:120px;" required>
+    <select name="slot_time" class="block-select" required>
       {% for t in slot_times %}
       <option value="{{ t }}">{{ t }}</option>
       {% endfor %}
     </select>
-    <button type="submit" class="btn btn-sm btn-outline-warning" data-i18n="block-btn">Block</button>
+    <button type="submit" class="btn-block" data-i18n="block-btn">Block</button>
   </form>
 </div>
 
-<!-- ── Appointments + blocked slots table ────────────────────────── -->
+<!-- ── Event cards ───────────────────────────────────────────────── -->
 {% if events %}
-<div class="bg-white shadow-sm rounded">
-  <table class="table appt-table mb-0">
-    <thead>
-      <tr>
-        <th style="width:90px;" data-i18n="th-time">Time</th>
-        <th data-i18n="th-customer">Customer</th>
-        <th data-i18n="th-phone">Phone</th>
-        <th style="width:110px;" data-i18n="th-status">Status</th>
-        <th style="width:100px;"></th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for event in events %}
+<div class="events-list">
+  {% for event in events %}
 
-        {% if event.kind == "appointment" %}
-          {% set appt = event.appt %}
-          <tr class="row-{{ appt.status }}">
+    {% if event.kind == "appointment" %}
+      {% set appt = event.appt %}
+      <div class="event-card event-{{ appt.status }}">
 
-            <td class="time-cell">{{ appt.start_time.strftime("%H:%M") }}</td>
+        <div class="event-time">{{ appt.start_time.strftime("%H:%M") }}</div>
 
-            <td>
-              <div class="customer-name">{{ appt.customer.full_name }}</div>
-              {% if appt.notes %}
-              <div class="customer-notes">{{ appt.notes }}</div>
-              {% endif %}
-            </td>
+        <div class="event-body">
+          <div class="event-name">{{ appt.customer.full_name }}</div>
+          <div class="event-meta">
+            <a href="tel:{{ appt.customer.phone }}" class="phone-link">
+              <i class="bi bi-telephone"></i> {{ appt.customer.phone }}
+            </a>
+            {% if appt.notes %}
+            <span class="event-notes">· {{ appt.notes }}</span>
+            {% endif %}
+          </div>
+        </div>
 
-            <td>
-              <a href="tel:{{ appt.customer.phone }}" class="phone-link">
-                {{ appt.customer.phone }}
-              </a>
-            </td>
+        <div class="event-status">
+          {% if appt.status == "confirmed" %}
+            <span class="status-pill pill-confirmed" data-i18n="badge-confirmed">Confirmed</span>
+          {% elif appt.status == "hold" %}
+            <span class="status-pill pill-hold" data-i18n="badge-hold">Pending</span>
+          {% elif appt.status == "expired" %}
+            <span class="status-pill pill-expired" data-i18n="badge-expired">Expired</span>
+          {% else %}
+            <span class="status-pill pill-cancelled" data-i18n="badge-cancelled">Cancelled</span>
+          {% endif %}
+        </div>
 
-            <td>
-              {% if appt.status == "confirmed" %}
-                <span class="badge-confirmed" data-i18n="badge-confirmed">Confirmed</span>
-              {% elif appt.status == "hold" %}
-                <span class="badge-hold" data-i18n="badge-hold">Pending</span>
-              {% elif appt.status == "expired" %}
-                <span class="badge-expired" data-i18n="badge-expired">Expired</span>
-              {% else %}
-                <span class="badge-cancelled" data-i18n="badge-cancelled">Cancelled</span>
-              {% endif %}
-            </td>
+        <div class="event-action">
+          {% if appt.status == "confirmed" %}
+          <form method="post" action="/dashboard/cancel/{{ appt.id }}"
+                onsubmit="return confirm('Cancel appointment for {{ appt.customer.full_name }} at {{ appt.start_time.strftime("%H:%M") }}?')">
+            <input type="hidden" name="target_date" value="{{ target_date }}" />
+            <button type="submit" class="action-btn btn-cancel" data-i18n="cancel-btn">Cancel</button>
+          </form>
+          {% endif %}
+        </div>
 
-            <td class="text-end">
-              {% if appt.status == "confirmed" %}
-              <form method="post" action="/dashboard/cancel/{{ appt.id }}"
-                    onsubmit="return confirm('Cancel appointment for {{ appt.customer.full_name }} at {{ appt.start_time.strftime("%H:%M") }}?')">
-                <input type="hidden" name="target_date" value="{{ target_date }}" />
-                <button type="submit" class="btn btn-sm btn-outline-danger" data-i18n="cancel-btn">Cancel</button>
-              </form>
-              {% endif %}
-            </td>
+      </div>
 
-          </tr>
+    {% else %}
+      {% set block = event.block %}
+      <div class="event-card event-blocked">
 
-        {% else %}
-          {% set block = event.block %}
-          <tr class="row-blocked">
+        <div class="event-time">{{ block.start_time.strftime("%H:%M") }}</div>
 
-            <td class="time-cell" style="color:#fd7e14;">{{ block.start_time.strftime("%H:%M") }}</td>
-            <td><span class="text-secondary" style="font-size:0.9rem;">— Blocked —</span></td>
-            <td></td>
-            <td><span class="badge-blocked" data-i18n="badge-blocked">Blocked</span></td>
+        <div class="event-body">
+          <div class="event-name" style="color:var(--bb-muted); font-style:italic;">— Blocked —</div>
+        </div>
 
-            <td class="text-end">
-              <form method="post" action="/dashboard/unblock/{{ block.id }}">
-                <input type="hidden" name="target_date" value="{{ target_date }}" />
-                <button type="submit" class="btn btn-sm btn-outline-secondary" data-i18n="unblock-btn">Unblock</button>
-              </form>
-            </td>
+        <div class="event-status">
+          <span class="status-pill pill-blocked" data-i18n="badge-blocked">Blocked</span>
+        </div>
 
-          </tr>
-        {% endif %}
+        <div class="event-action">
+          <form method="post" action="/dashboard/unblock/{{ block.id }}">
+            <input type="hidden" name="target_date" value="{{ target_date }}" />
+            <button type="submit" class="action-btn btn-unblock" data-i18n="unblock-btn">Unblock</button>
+          </form>
+        </div>
 
-      {% endfor %}
-    </tbody>
-  </table>
+      </div>
+    {% endif %}
+
+  {% endfor %}
 </div>
 
 {% else %}
-<div class="bg-white rounded shadow-sm empty-state">
-  <div class="icon">📅</div>
-  <p class="fw-semibold mb-1" data-i18n="empty-title">No appointments or blocks for this day.</p>
-  <p class="mb-0" style="font-size:0.9rem;" data-i18n="empty-sub">Use the arrows or date picker to navigate to another date.</p>
+<div class="empty-state">
+  <span class="empty-icon"><i class="bi bi-calendar3"></i></span>
+  <div class="empty-title" data-i18n="empty-title">No appointments or blocks for this day.</div>
+  <div class="empty-sub" data-i18n="empty-sub">Use the arrows or date picker to navigate to another date.</div>
 </div>
 {% endif %}
 
