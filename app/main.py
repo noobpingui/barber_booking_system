@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.v1 import appointments, auth, booking, customers, dashboard
 from app.config import settings
@@ -27,6 +28,8 @@ app = FastAPI(
     docs_url="/docs" if settings.debug else None,
     redoc_url="/redoc" if settings.debug else None,
 )
+
+app.mount("/assets", StaticFiles(directory="assets"), name="assets")
 
 # JSON API endpoints
 app.include_router(customers.router, prefix="/api/v1")
