@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = "sqlite:///./barber.db"
-    debug: bool = False
+    debug: bool = True
     cancellation_window_hours: int = 1  # minimum hours before appointment to allow cancellation
     hold_minutes: int = 10              # how long an unconfirmed hold blocks a slot
 
