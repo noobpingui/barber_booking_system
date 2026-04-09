@@ -62,6 +62,9 @@
     <input
       type="date"
       id="date-picker"
+      min="{{ today_str }}"
+      max="{{ max_date_str }}"
+      value="{{ today_str }}"
       class="form-control mt-3"
       style="max-width:175px; font-size:0.8rem; opacity:0.55; border-color:var(--bb-border); border-radius:8px;"
     />
@@ -141,11 +144,6 @@
   const slotsPrompt   = document.getElementById('slots-prompt');
   const startInput    = document.getElementById('start-time-input');
   const submitBtn     = document.getElementById('submit-btn');
-
-  // Dates are provided by the server in local time (UTC-6).
-  datePicker.value = "{{ today_str }}";
-  datePicker.min   = "{{ today_str }}";
-  datePicker.max   = "{{ max_date_str }}";
 
   // Fetch slots whenever the date changes.
   datePicker.addEventListener('change', fetchSlots);
